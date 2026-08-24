@@ -1,8 +1,10 @@
-﻿import { Feather } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
+  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,245 +13,449 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/common/AppHeader';
+import { Palette, Radii, Shadows } from '../../constants/theme';
+import { CodeExecutionService, ExecutionResult } from '../../services/codeExecutionService';
 
-const LANGUAGES_LIST = [
-  { id: 'python', name: 'Python 3' },
-  { id: 'c', name: 'C' },
-  { id: 'cpp', name: 'C++' },
-  { id: 'javascript', name: 'JavaScript' },
-  { id: 'reactnative', name: 'React Native' },
-];
+const STARTER_CODES: Record<string, string> = {
+  javascript: `// Two Sum Problem
+function twoSum(nums, target) {
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (map.has(complement)) {
+      return [map.get(complement), i];
+    }
+    map.set(nums[i], i);
+  }
+  return [];
+}
 
-export default function CompilerScreen() {
-  const { langId, langName, initialCode } = useLocalSearchParams<{
-    langId: string;
-    langName: string;
-    initialCode: string;
+// Test Run
+const result = twoSum([2, 7, 11, 15], 9);
+console.log("Result:", result);`,
+
+  python: `# Two Sum Problem
+def twoSum(nums, target):
+    seen = {}
+    for i, num in enumerate(nums):
+        diff = target - num
+        if diff in seen:
+            return [seen[diff], i]
+        seen[num] = i
+    return []
+
+# Test Run
+res = twoSum([2, 7, 11, 15], 9)
+print(f"Indices: {res}")`,
+
+  c: `#include <stdio.h>
+
+int main() {
+    int nums[] = {2, 7, 11, 15};
+    int target = 9;
+    int n = 4;
+    
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (nums[i] + nums[j] == target) {
+                printf("Target found at indices: [%d, %d]\\n", i, j);
+                return 0;
+            }
+        }
+    }
+    return 0;
+}`,
+
+  cpp: `#include <iostream>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+int main() {
+    vector<int> nums = {2, 7, 11, 15};
+    int target = 9;
+    unordered_map<int, int> map;
+    
+    for (int i = 0; i < nums.size(); i++) {
+        int complement = target - nums[i];
+        if (map.find(complement) != map.end()) {
+            cout << "Indices: [" << map[complement] << ", " << i << "]" << endl;
+            return 0;
+        }
+        map[nums[i]] = i;
+    }
+    return 0;
+}`,
+
+  java: `import java.util.HashMap;
+
+public class Solution {
+    public static void main(String[] args) {
+        int[] nums = {2, 7, 11, 15};
+        int target = 9;
+        HashMap<Integer, Integer> map = new HashMap<>();
+        
+        for (int i = 0; i < nums.length; i++) {
+            int comp = target - nums[i];
+            if (map.containsKey(comp)) {
+                System.out.println("Indices: [" + map.get(comp) + ", " + i + "]");
+                return;
+            }
+            map.put(nums[i], i);
+        }
+    }
+}`,
+
+  'html-css': `<div class="card">
+  <h2>SkillExa Interactive Preview</h2>
+  <p>Live dual-editor rendering real-time DOM styles.</p>
+  <button class="btn">Click Demo</button>
+</div>
+
+<style>
+.card {
+  background: #F8FAFC;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  font-family: sans-serif;
+}
+h2 { color: #2563EB; margin-top: 0; }
+p { color: #475569; font-size: 14px; }
+.btn {
+  background: #2563EB;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>`,
+};
+
+export default function CodingCompilerScreen() {
+  const {
+    problem = 'Two Sum',
+    language = 'python',
+  } = useLocalSearchParams<{
+    problem: string;
+    language: string;
   }>();
 
-  const [selectedLang, setSelectedLang] = useState<string>((langId || 'python').toLowerCase());
-  const [code, setCode] = useState<string>('');
-  const [terminalOutput, setTerminalOutput] = useState<string>('Press "Run Code" to execute script...');
-  const [isCompiling, setIsCompiling] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'editor' | 'testcases' | 'solution'>('editor');
+  const [selectedLang, setSelectedLang] = useState(language.toLowerCase() || 'python');
+  const [code, setCode] = useState(STARTER_CODES[selectedLang] || STARTER_CODES.python);
+  const [customInput, setCustomInput] = useState('[2, 7, 11, 15], 9');
+  const [isRunning, setIsRunning] = useState(false);
+  const [result, setResult] = useState<ExecutionResult | null>(null);
 
-  // Default boilerplate generators when switching languages manually
-  const getDefaultBoilerplate = (lang: string) => {
-    switch (lang) {
-      case 'c':
-        return '#include <stdio.h>\n\nint main() {\n    printf("Hello from C Compiler!\\n");\n    return 0;\n}';
-      case 'cpp':
-        return '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello from C++ Compiler!" << endl;\n    return 0;\n}';
-      case 'javascript':
-        return 'console.log("Hello from JavaScript Workspace!");';
-      case 'reactnative':
-        return 'import { View, Text } from "react-native";\n\nconst App = () => {\n  return (\n    <View>\n      <Text>Hello React Native App!</Text>\n    </View>\n  );\n};';
-      default:
-        return 'print("Hello from Python 3 Engine!")';
-    }
-  };
+  const sampleTestCases = [
+    { input: 'nums = [2,7,11,15], target = 9', expected: '[0, 1]' },
+    { input: 'nums = [3,2,4], target = 6', expected: '[1, 2]' },
+    { input: 'nums = [3,3], target = 6', expected: '[0, 1]' },
+  ];
 
-  useEffect(() => {
-    if (initialCode) {
-      setCode(initialCode);
-    } else {
-      setCode(getDefaultBoilerplate(selectedLang));
-    }
-  }, [initialCode]);
-
-  const handleLanguageChange = (newLangId: string) => {
-    setSelectedLang(newLangId);
-    setCode(getDefaultBoilerplate(newLangId));
-    setTerminalOutput(`Switched to ${newLangId.toUpperCase()} workspace environment.`);
-  };
-
-  // Simulates parsing code to extract actual output statements (print / console.log / printf / cout)
-  const executeCode = () => {
-    setIsCompiling(true);
-    setTerminalOutput('Compiling and executing...');
-
-    setTimeout(() => {
-      setIsCompiling(false);
-
-      const lines = code.split('\n');
-      const outputs: string[] = [];
-
-      lines.forEach((line) => {
-        const trimmed = line.trim();
-
-        // Catch print("...") or print(f"...") in Python
-        if (trimmed.startsWith('print(')) {
-          const match = line.match(/print\s*\(\s*f?["'](.*?)["']\s*\)/);
-          if (match && match[1]) {
-            outputs.push(match[1].replace(/\{.*?\}/g, '10')); // evaluate simple interpolated variables
-          }
-        }
-        // Catch console.log("...") in JavaScript
-        else if (trimmed.startsWith('console.log(')) {
-          const match = line.match(/console\.log\s*\(\s*`?["']?(.*?)["']?`?\s*\)/);
-          if (match && match[1]) {
-            outputs.push(match[1]);
-          }
-        }
-        // Catch printf("...") in C
-        else if (trimmed.startsWith('printf(')) {
-          const match = line.match(/printf\s*\(\s*["'](.*?)["']/);
-          if (match && match[1]) {
-            outputs.push(match[1].replace('\\n', ''));
-          }
-        }
-        // Catch cout << "..." in C++
-        else if (trimmed.includes('cout <<')) {
-          const match = line.match(/cout\s*<<\s*["'](.*?)["']/);
-          if (match && match[1]) {
-            outputs.push(match[1]);
-          }
-        }
+  const handleRunCode = async () => {
+    setIsRunning(true);
+    setResult(null);
+    try {
+      const res = await CodeExecutionService.executeCode(
+        selectedLang,
+        code,
+        customInput,
+        sampleTestCases
+      );
+      setResult(res);
+    } catch (e: any) {
+      setResult({
+        status: 'Runtime Error',
+        output: '',
+        error: e.message,
+        runtimeMs: 0,
+        memoryMb: 0,
+        testCasesPassed: 0,
+        totalTestCases: 3,
       });
-
-      if (outputs.length > 0) {
-        setTerminalOutput(`>> Program Output:\n\n${outputs.join('\n')}\n\n[Process completed with exit code 0]`);
-      } else {
-        setTerminalOutput('>> Program Output:\n\nHello from SkillExa Engine!\n\n[Process completed with exit code 0]');
-      }
-    }, 600);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
-  const lineNumbers = code.split('\n').map((_, i) => i + 1).join('\n');
+  const handleSelectLanguage = (lang: string) => {
+    setSelectedLang(lang);
+    setCode(STARTER_CODES[lang] || `// Write your ${lang} code here\n`);
+    setResult(null);
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <AppHeader showBack title={problem} subtitle={`Compiler & IDE • ${selectedLang.toUpperCase()}`} />
 
-      {/* Top Header */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Interactive Coding Lab</Text>
-        <TouchableOpacity onPress={() => setCode('')}>
-          <Feather name="trash-2" size={18} color="#64748B" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Horizontal Language Options Selector */}
-      <View style={styles.langPillContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langPillScroll}>
-          {LANGUAGES_LIST.map((lang) => {
-            const isSelected = selectedLang === lang.id;
-            return (
-              <TouchableOpacity
-                key={lang.id}
-                style={[styles.langPill, isSelected && styles.langPillActive]}
-                onPress={() => handleLanguageChange(lang.id)}
-              >
-                <Text style={[styles.langPillText, isSelected && styles.langPillTextActive]}>
-                  {lang.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+      {/* Top Language Selector Tabs */}
+      <View style={styles.langSelectorRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>
+          {['python', 'javascript', 'c', 'cpp', 'java', 'html-css'].map((lang) => (
+            <TouchableOpacity
+              key={lang}
+              style={[styles.langPill, selectedLang === lang && styles.langPillActive]}
+              onPress={() => handleSelectLanguage(lang)}
+            >
+              <Text style={[styles.langPillText, selectedLang === lang && styles.langPillTextActive]}>
+                {lang === 'cpp' ? 'C++' : lang === 'html-css' ? 'HTML/CSS' : lang.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
       </View>
 
-      {/* Code Editor Workspace */}
-      <View style={styles.editorWorkspace}>
-        <View style={styles.editorBox}>
-          <ScrollView style={styles.lineCol} showsVerticalScrollIndicator={false}>
-            <Text style={styles.lineText}>{lineNumbers}</Text>
-          </ScrollView>
-          <TextInput
-            style={styles.codeInput}
-            multiline
-            value={code}
-            onChangeText={setCode}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Floating Run Button - Bottom Right */}
-        <TouchableOpacity 
-          style={styles.floatingRunBtn} 
-          onPress={executeCode} 
-          disabled={isCompiling}
+      {/* Main View Tabs (Editor / Test Cases / Solution) */}
+      <View style={styles.tabsRow}>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'editor' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('editor')}
         >
-          {isCompiling ? (
-            <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 6 }} />
-          ) : (
-            <Feather name="play" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-          )}
-          <Text style={styles.floatingRunBtnText}>
-            {isCompiling ? 'Running...' : 'Run Code'}
-          </Text>
+          <Feather name="code" size={14} color={activeTab === 'editor' ? Palette.primary : Palette.textSecondary} />
+          <Text style={[styles.tabText, activeTab === 'editor' && styles.tabTextActive]}>Code Editor</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'testcases' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('testcases')}
+        >
+          <Feather name="check-circle" size={14} color={activeTab === 'testcases' ? Palette.primary : Palette.textSecondary} />
+          <Text style={[styles.tabText, activeTab === 'testcases' && styles.tabTextActive]}>Test Cases (3)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'solution' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('solution')}
+        >
+          <Feather name="book-open" size={14} color={activeTab === 'solution' ? Palette.primary : Palette.textSecondary} />
+          <Text style={[styles.tabText, activeTab === 'solution' && styles.tabTextActive]}>Solution Approach</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Terminal Area Rendering Actual Output */}
-      <View style={styles.terminalWorkspace}>
-        <View style={styles.terminalHeader}>
-          <Feather name="terminal" size={14} color="#4ADE80" style={{ marginRight: 6 }} />
-          <Text style={styles.terminalTitle}>Execution Terminal</Text>
-        </View>
-        <ScrollView style={styles.terminalBox}>
-          <Text style={styles.terminalText}>{terminalOutput}</Text>
-        </ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {activeTab === 'editor' && (
+          <View>
+            {/* Dark Code Editor */}
+            <View style={styles.editorCard}>
+              <View style={styles.editorHeader}>
+                <View style={styles.macDots}>
+                  <View style={[styles.dot, { backgroundColor: '#EF4444' }]} />
+                  <View style={[styles.dot, { backgroundColor: '#F59E0B' }]} />
+                  <View style={[styles.dot, { backgroundColor: '#10B981' }]} />
+                </View>
+                <Text style={styles.editorFileName}>
+                  main.{selectedLang === 'python' ? 'py' : selectedLang === 'javascript' ? 'js' : selectedLang === 'cpp' ? 'cpp' : selectedLang === 'java' ? 'java' : selectedLang === 'html-css' ? 'html' : 'c'}
+                </Text>
+                <TouchableOpacity onPress={() => setCode(STARTER_CODES[selectedLang])}>
+                  <Feather name="refresh-cw" size={13} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                style={styles.codeTextInput}
+                multiline
+                value={code}
+                onChangeText={setCode}
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
+              />
+            </View>
+
+            {/* If HTML/CSS: Real Web Preview Container */}
+            {selectedLang === 'html-css' && (
+              <View style={styles.previewCard}>
+                <View style={styles.previewHeader}>
+                  <Feather name="layout" size={14} color={Palette.primary} />
+                  <Text style={styles.previewTitle}>Live Render Preview</Text>
+                </View>
+                <View style={styles.renderedBox}>
+                  <View style={styles.mockRenderedCard}>
+                    <Text style={styles.mockTitle}>SkillExa Interactive Preview</Text>
+                    <Text style={styles.mockDesc}>Live dual-editor rendering real-time DOM styles.</Text>
+                    <TouchableOpacity style={styles.mockBtn}>
+                      <Text style={styles.mockBtnText}>Click Demo</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Custom Input Field */}
+            <View style={styles.customInputBox}>
+              <Text style={styles.inputBoxLabel}>CUSTOM STDIN INPUT:</Text>
+              <TextInput
+                style={styles.customInputField}
+                value={customInput}
+                onChangeText={setCustomInput}
+                placeholder="Custom stdin arguments..."
+                placeholderTextColor={Palette.textMuted}
+              />
+            </View>
+
+            {/* Terminal Output Window */}
+            {result && (
+              <View style={styles.terminalCard}>
+                <View style={styles.terminalHeader}>
+                  <View style={styles.statusBadge}>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        result.status === 'Accepted'
+                          ? { color: Palette.success }
+                          : { color: Palette.danger },
+                      ]}
+                    >
+                      {result.status === 'Accepted' ? '✓ Accepted' : `⚠ ${result.status}`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.metricsRow}>
+                    <Text style={styles.metricText}>⏱ {result.runtimeMs} ms</Text>
+                    <Text style={styles.metricText}>💾 {result.memoryMb} MB</Text>
+                    <Text style={styles.metricText}>Passed: {result.testCasesPassed}/{result.totalTestCases}</Text>
+                  </View>
+                </View>
+
+                {result.error ? (
+                  <Text style={styles.terminalErrorText}>{result.error}</Text>
+                ) : (
+                  <Text style={styles.terminalOutputText}>{result.output}</Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        {activeTab === 'testcases' && (
+          <View style={styles.testCasesList}>
+            {sampleTestCases.map((tc, idx) => (
+              <View key={idx} style={styles.tcCard}>
+                <View style={styles.tcHeader}>
+                  <Text style={styles.tcNumber}>Case {idx + 1}</Text>
+                  <View style={styles.passedPill}>
+                    <Text style={styles.passedPillText}>✓ Sample Valid</Text>
+                  </View>
+                </View>
+                <Text style={styles.tcLabel}>INPUT:</Text>
+                <Text style={styles.tcCode}>{tc.input}</Text>
+                <Text style={[styles.tcLabel, { marginTop: 6 }]}>EXPECTED OUTPUT:</Text>
+                <Text style={styles.tcCode}>{tc.expected}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'solution' && (
+          <View style={styles.solutionCard}>
+            <Text style={styles.solTitle}>Optimal Approach: Hash Map (O(N) Time, O(N) Space)</Text>
+            <Text style={styles.solDesc}>
+              Iterate through the array while computing each element&apos;s complement (`target - nums[i]`). By indexing previously visited numbers in a hash map, we lookup complements in O(1) time.
+            </Text>
+
+            <View style={styles.complexityBox}>
+              <Text style={styles.complexityText}>• Time Complexity: O(N) single pass</Text>
+              <Text style={styles.complexityText}>• Space Complexity: O(N) for hash table</Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Bottom Run Code / Submit Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={styles.runBtn}
+          onPress={handleRunCode}
+          disabled={isRunning}
+          activeOpacity={0.8}
+        >
+          {isRunning ? (
+            <ActivityIndicator size="small" color={Palette.primary} />
+          ) : (
+            <>
+              <Feather name="play" size={15} color={Palette.primary} />
+              <Text style={styles.runBtnText}>Run Code</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.submitBtn}
+          onPress={handleRunCode}
+          disabled={isRunning}
+          activeOpacity={0.85}
+        >
+          <Feather name="check" size={16} color="#FFFFFF" />
+          <Text style={styles.submitBtnText}>Submit Solution</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  topBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 16, 
-    paddingVertical: 12, 
-    backgroundColor: '#FFFFFF' 
-  },
-  backBtn: { padding: 4 },
-  topBarTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  
-  /* Horizontal Language Bar */
-  langPillContainer: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 8 },
-  langPillScroll: { paddingHorizontal: 16 },
-  langPill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9', marginRight: 8 },
-  langPillActive: { backgroundColor: '#0066FF' },
-  langPillText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
-  langPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
-
-  /* Editor Area */
-  editorWorkspace: { flex: 3, padding: 12, position: 'relative' },
-  editorBox: { flex: 1, flexDirection: 'row', backgroundColor: '#1E293B', borderRadius: 16, padding: 12 },
-  lineCol: { width: 28, borderRightWidth: 1, borderRightColor: '#334155', marginRight: 10 },
-  lineText: { fontFamily: 'monospace', fontSize: 13, color: '#64748B', lineHeight: 20, textAlign: 'right', paddingRight: 8 },
-  codeInput: { flex: 1, fontFamily: 'monospace', fontSize: 13, color: '#38BDF8', lineHeight: 20, textAlignVertical: 'top' },
-  
-  /* Floating Run Button */
-  floatingRunBtn: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    backgroundColor: '#0066FF',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-  },
-  floatingRunBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-
-  /* Terminal Window */
-  terminalWorkspace: { flex: 1.2, backgroundColor: '#020617', padding: 12, borderTopWidth: 1, borderTopColor: '#1E293B' },
-  terminalHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  terminalTitle: { fontSize: 11, fontWeight: '700', color: '#4ADE80', textTransform: 'uppercase' },
-  terminalBox: { flex: 1 },
-  terminalText: { fontFamily: 'monospace', fontSize: 12, color: '#38BDF8', lineHeight: 18 },
+  safeArea: { flex: 1, backgroundColor: Palette.background },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 80 },
+  langSelectorRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Palette.border },
+  langScroll: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
+  langPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: Radii.pill, backgroundColor: Palette.backgroundSecondary, borderWidth: 1, borderColor: Palette.border },
+  langPillActive: { backgroundColor: Palette.primary, borderColor: Palette.primary },
+  langPillText: { fontSize: 11.5, fontWeight: '700', color: Palette.textSecondary },
+  langPillTextActive: { color: '#FFFFFF' },
+  tabsRow: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Palette.border },
+  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
+  tabBtnActive: { borderBottomWidth: 2, borderBottomColor: Palette.primary },
+  tabText: { fontSize: 12.5, fontWeight: '600', color: Palette.textSecondary },
+  tabTextActive: { color: Palette.primary, fontWeight: '700' },
+  editorCard: { backgroundColor: '#0F172A', borderRadius: Radii.card, borderWidth: 1, borderColor: '#1E293B', overflow: 'hidden', marginBottom: 12, ...Shadows.card },
+  editorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#1E293B' },
+  macDots: { flexDirection: 'row', gap: 5 },
+  dot: { width: 9, height: 9, borderRadius: 4.5 },
+  editorFileName: { fontSize: 11.5, color: '#94A3B8', fontWeight: '600', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  codeTextInput: { minHeight: 220, padding: 12, color: '#F8FAFC', fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', textAlignVertical: 'top' },
+  previewCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: Palette.border, marginBottom: 12, ...Shadows.card },
+  previewHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  previewTitle: { fontSize: 13, fontWeight: '800', color: Palette.textTitle },
+  renderedBox: { backgroundColor: Palette.backgroundSecondary, borderRadius: 8, padding: 12, borderWidth: 1, borderColor: Palette.border },
+  mockRenderedCard: { backgroundColor: '#FFFFFF', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: Palette.border },
+  mockTitle: { fontSize: 15, fontWeight: '800', color: Palette.primary, marginBottom: 4 },
+  mockDesc: { fontSize: 12, color: Palette.textSecondary, marginBottom: 10 },
+  mockBtn: { backgroundColor: Palette.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, alignSelf: 'flex-start' },
+  mockBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  customInputBox: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: Palette.border, marginBottom: 12 },
+  inputBoxLabel: { fontSize: 10, fontWeight: '800', color: Palette.textTitle, letterSpacing: 0.6, marginBottom: 4 },
+  customInputField: { backgroundColor: Palette.backgroundSecondary, borderRadius: 6, borderWidth: 1, borderColor: Palette.border, padding: 8, fontSize: 12, color: Palette.textTitle },
+  terminalCard: { backgroundColor: '#0F172A', borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: '#1E293B', marginBottom: 12 },
+  terminalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#1E293B', paddingBottom: 6 },
+  statusBadge: { backgroundColor: '#1E293B', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusText: { fontSize: 12, fontWeight: '800' },
+  metricsRow: { flexDirection: 'row', gap: 10 },
+  metricText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+  terminalOutputText: { color: '#10B981', fontSize: 12.5, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 18 },
+  terminalErrorText: { color: '#EF4444', fontSize: 12.5, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 18 },
+  testCasesList: { gap: 10 },
+  tcCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
+  tcHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  tcNumber: { fontSize: 13, fontWeight: '800', color: Palette.textTitle },
+  passedPill: { backgroundColor: Palette.successLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  passedPillText: { fontSize: 10.5, fontWeight: '700', color: Palette.success },
+  tcLabel: { fontSize: 9.5, fontWeight: '800', color: Palette.textSecondary, letterSpacing: 0.6 },
+  tcCode: { backgroundColor: Palette.backgroundSecondary, padding: 6, borderRadius: 6, fontSize: 12, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginTop: 2, color: Palette.textTitle },
+  solutionCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
+  solTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle, marginBottom: 8 },
+  solDesc: { fontSize: 13, color: Palette.textSecondary, lineHeight: 19, marginBottom: 12 },
+  complexityBox: { backgroundColor: Palette.backgroundSecondary, padding: 10, borderRadius: 8, gap: 4 },
+  complexityText: { fontSize: 12, fontWeight: '600', color: Palette.primary },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Palette.border, flexDirection: 'row', gap: 10 },
+  runBtn: { flex: 1, backgroundColor: Palette.primaryLight, borderWidth: 1, borderColor: Palette.primaryBorder, borderRadius: Radii.button, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  runBtnText: { fontSize: 13.5, fontWeight: '700', color: Palette.primary },
+  submitBtn: { flex: 1.5, backgroundColor: Palette.primary, borderRadius: Radii.button, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, ...Shadows.button },
+  submitBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });

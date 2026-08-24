@@ -1,210 +1,264 @@
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SplashScreenExpo from "expo-splash-screen";
-import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
+import React, { useEffect, useRef } from "react";
+import {
+  Animated,
+  Easing,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "../components/auth-context";
+import { Palette, Radii, Shadows } from "../constants/theme";
 
 export default function SplashScreen() {
-  const skillOpacity = useSharedValue(0);
-
-  const exaOpacity = useSharedValue(0);
-  const exaScale = useSharedValue(0.3);
-
-  const sparkOpacity = useSharedValue(0);
-  const sparkScale = useSharedValue(0);
-
   const router = useRouter();
+  const { profile } = useAuth();
 
-  // Delay before navigating to login (milliseconds). Change to 5000 for 5s.
-  const SPLASH_NAV_DELAY_MS = 3000;
-  const [secondsLeft, setSecondsLeft] = useState(
-    Math.ceil(SPLASH_NAV_DELAY_MS / 1000)
-  );
+  // Animation values
+  const logoScale = useRef(new Animated.Value(0.7)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const badgeOpacity = useRef(new Animated.Value(0)).current;
+  const badgeTranslateY = useRef(new Animated.Value(15)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Skill fades in
-    skillOpacity.value = withTiming(1, {
-      duration: 1000,
-    });
+    // 1. Hide native splash screen safely
+    SplashScreenExpo.hideAsync().catch(() => undefined);
 
-    // Exa appears
-    exaOpacity.value = withDelay(
-      900,
-      withTiming(1, { duration: 400 })
-    );
+    // 2. Start entrance animations
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // Exa pops
-    exaScale.value = withDelay(
-      900,
-      withSequence(
-        withTiming(1.2, { duration: 250 }),
-        withTiming(1, { duration: 200 })
-      )
-    );
+    // 3. Subtitle & Badge Animation
+    Animated.parallel([
+      Animated.timing(badgeOpacity, {
+        toValue: 1,
+        duration: 600,
+        delay: 400,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(badgeTranslateY, {
+        toValue: 0,
+        duration: 600,
+        delay: 400,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 1800,
+        delay: 200,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+    ]).start();
 
-    // Spark appears
-    sparkOpacity.value = withDelay(
-      1400,
-      withTiming(1, { duration: 300 })
-    );
+    // 4. Auto Navigation Timer
+    const timer = setTimeout(() => {
+      handleNavigate();
+    }, 2200);
 
-    // Spark pulse forever
-    sparkScale.value = withDelay(
-      1400,
-      withRepeat(
-        withSequence(
-          withTiming(1.5, { duration: 500 }),
-          withTiming(1, { duration: 500 })
-        ),
-        -1,
-        false
-      )
-    );
+    return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    console.log("Splash mounted, will navigate in", SPLASH_NAV_DELAY_MS, "ms");
+  const handleNavigate = () => {
+    if (profile && profile.name) {
+      router.replace("/home" as any);
+    } else {
+      router.replace("/login" as any);
+    }
+  };
 
-    const timeout = setTimeout(() => {
-      (async () => {
-        try {
-          console.log("Hiding native splash and navigating to /login");
-          await SplashScreenExpo.hideAsync().catch(() => undefined);
-          await router.push("/login");
-        } catch (err) {
-          console.error("Navigation to /login failed:", err);
-          Alert.alert("Navigation error", String(err));
-        }
-      })();
-    }, SPLASH_NAV_DELAY_MS);
-
-    const interval = setInterval(() => {
-      setSecondsLeft((s) => Math.max(0, s - 1));
-    }, 1000);
-
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
-  }, [router]);
-
-  const skillStyle = useAnimatedStyle(() => ({
-    opacity: skillOpacity.value,
-  }));
-
-  const exaStyle = useAnimatedStyle(() => ({
-    opacity: exaOpacity.value,
-    transform: [{ scale: exaScale.value }],
-  }));
-
-  const sparkStyle = useAnimatedStyle(() => ({
-    opacity: sparkOpacity.value,
-    transform: [{ scale: sparkScale.value }],
-  }));
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoRow}>
-        <Animated.Text
-          style={[styles.logoText, styles.skillText, skillStyle]}>
-          skill
-        </Animated.Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
+      <View style={styles.centerContent}>
+        {/* Animated Brand Icon & Title */}
         <Animated.View
-          style={[styles.exaContainer, exaStyle]}>
+          style={[
+            styles.brandGroup,
+            {
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }],
+            },
+          ]}
+        >
+          <View style={styles.iconCircle}>
+            <Feather name="book-open" size={38} color="#FFFFFF" />
+          </View>
 
-          <Text style={[styles.logoText, styles.exaText]}>
-            Exa
+          <Text style={styles.brandTitle}>
+            Skill<Text style={styles.brandHighlight}>Exa</Text>
+          </Text>
+        </Animated.View>
+
+        {/* Tagline & Badges */}
+        <Animated.View
+          style={[
+            styles.subtitleGroup,
+            {
+              opacity: badgeOpacity,
+              transform: [{ translateY: badgeTranslateY }],
+            },
+          ]}
+        >
+          <Text style={styles.brandTagline}>
+            Engineering & Competitive Preparation
           </Text>
 
-          <Animated.View
-            style={[styles.sparkGlow, sparkStyle]}
-          />
-
-          <Animated.View
-            style={[styles.sparkCore, sparkStyle]}
-          />
-
+          <View style={styles.badgesRow}>
+            <View style={styles.badgePill}>
+              <Feather name="cpu" size={12} color={Palette.primary} />
+              <Text style={styles.badgeText}>Engineering</Text>
+            </View>
+            <View style={[styles.badgePill, { backgroundColor: Palette.warningLight, borderColor: Palette.warningBorder }]}>
+              <Feather name="award" size={12} color={Palette.warning} />
+              <Text style={[styles.badgeText, { color: Palette.warning }]}>Competitive</Text>
+            </View>
+          </View>
         </Animated.View>
       </View>
-      <View style={{ marginTop: 20, alignItems: "center" }}>
-        <Text>{secondsLeft > 0 ? `Continuing in ${secondsLeft}s` : "Continuing..."}</Text>
+
+      {/* Bottom Loading Progress Bar & Skip */}
+      <View style={styles.footer}>
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+        </View>
+
         <TouchableOpacity
-          style={styles.manualButton}
-          onPress={async () => {
-            await SplashScreenExpo.hideAsync().catch(() => undefined);
-            router.push("/login");
-          }}
+          style={styles.skipBtn}
+          onPress={handleNavigate}
+          activeOpacity={0.7}
         >
-          <Text style={{ color: "#fff" }}>Continue Now</Text>
+          <Text style={styles.skipText}>Tap to Continue</Text>
+          <Feather name="arrow-right" size={13} color={Palette.primary} />
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFFFF",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+  },
+  centerContent: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
-
-  logoRow: {
-    flexDirection: "row",
+  brandGroup: {
     alignItems: "center",
   },
-
-  exaContainer: {
-    position: "relative",
+  iconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: Palette.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    ...Shadows.button,
   },
-
-  logoText: {
-    fontSize: 64,
-    fontWeight: "bold",
+  brandTitle: {
+    fontSize: 40,
+    fontWeight: "900",
+    color: Palette.textTitle,
+    letterSpacing: -0.8,
   },
-
-  skillText: {
-    color: "#2563EB",
+  brandHighlight: {
+    color: Palette.primary,
   },
-
-  exaText: {
-    color: "#06B6D4",
-  },
-
-  sparkCore: {
-    position: "absolute",
-    top: -8,
-    right: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#ffffff",
-    zIndex: 2,
-  },
-
-  sparkGlow: {
-    position: "absolute",
-    top: -18,
-    right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(6,182,212,0.25)",
-  },
-  manualButton: {
+  subtitleGroup: {
+    alignItems: "center",
     marginTop: 10,
-    backgroundColor: "#06B6D4",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+  },
+  brandTagline: {
+    fontSize: 14.5,
+    fontWeight: "600",
+    color: Palette.textSecondary,
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+  badgesRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+  },
+  badgePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Palette.primaryLight,
+    borderWidth: 1,
+    borderColor: Palette.primaryBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radii.pill,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Palette.primary,
+  },
+  footer: {
+    width: "100%",
+    maxWidth: 260,
+    alignItems: "center",
+    gap: 12,
+  },
+  progressTrack: {
+    width: "100%",
+    height: 4,
+    backgroundColor: Palette.border,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: Palette.primary,
+    borderRadius: 2,
+  },
+  skipBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  skipText: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: Palette.primary,
   },
 });
