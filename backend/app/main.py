@@ -36,8 +36,10 @@ from backend.app.routers import (
     questions_router,
     quizzes_router,
     student_router,
+    topics_router,
     videos_router,
 )
+
 from backend.app.seed import seed_database
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
@@ -85,6 +87,7 @@ app.include_router(coding_router, prefix=settings.API_V1_STR)
 app.include_router(interviews_router, prefix=settings.API_V1_STR)
 app.include_router(notifications_router, prefix=settings.API_V1_STR)
 app.include_router(progress_router, prefix=settings.API_V1_STR)
+app.include_router(topics_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", tags=["Health"])

@@ -280,6 +280,15 @@ export const ApiClient = {
     request<any>('/notifications/read-all', {
       method: 'POST',
     }),
+
+  // 9. Topics & Learning Curriculum (Backend-verified)
+  getTopics: (language: string = 'python') => request<any>(`/topics?language=${language}`),
+  getTopicDetails: (topicId: number, language: string = 'python') =>
+    request<any>(`/topics/${topicId}/details?language=${language}`),
+  completeTopic: (topicId: number, score: number = 100, language: string = 'python') =>
+    request<any>(`/topics/${topicId}/complete?score=${score}&language=${language}`, {
+      method: 'POST',
+    }),
 };
 
 /**
