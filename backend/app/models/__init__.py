@@ -23,6 +23,22 @@ from backend.app.models.interview import (
     InterviewStatusEnum,
 )
 from backend.app.models.notification import Notification, StudentProgress, NotificationTypeEnum
+from backend.app.models.competitive import (
+    CompetitiveExam,
+    CompetitiveSubject,
+    CompetitiveTopic,
+    TopicContent,
+    TopicExample,
+    PreviousYearQuestion,
+    CompetitiveQuiz,
+    CompetitiveQuizQuestion,
+    StudentTopicProgress,
+    CompetitiveQuizAttempt,
+    Source,
+    ContentVerification,
+    ContentVerificationStatus,
+    TopicProgressState,
+)
 
 __all__ = [
     "User",
@@ -61,4 +77,18 @@ __all__ = [
     "Notification",
     "StudentProgress",
     "NotificationTypeEnum",
+    "CompetitiveExam",
+    "CompetitiveSubject",
+    "CompetitiveTopic",
+    "TopicContent",
+    "TopicExample",
+    "PreviousYearQuestion",
+    "CompetitiveQuiz",
+    "CompetitiveQuizQuestion",
+    "StudentTopicProgress",
+    "CompetitiveQuizAttempt",
+    "Source",
+    "ContentVerification",
+    "ContentVerificationStatus",
+    "TopicProgressState",
 ]

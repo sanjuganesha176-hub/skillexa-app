@@ -5,6 +5,7 @@ import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Easing,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -17,13 +18,13 @@ import { Palette, Radii, Shadows } from "../constants/theme";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { isAuthenticated, profile } = useAuth();
 
   // Animation values
-  const logoScale = useRef(new Animated.Value(0.7)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const badgeOpacity = useRef(new Animated.Value(0)).current;
-  const badgeTranslateY = useRef(new Animated.Value(15)).current;
+  const logoScale = useRef(new Animated.Value(Platform.OS === "web" ? 1 : 0.7)).current;
+  const logoOpacity = useRef(new Animated.Value(Platform.OS === "web" ? 1 : 0)).current;
+  const badgeOpacity = useRef(new Animated.Value(Platform.OS === "web" ? 1 : 0)).current;
+  const badgeTranslateY = useRef(new Animated.Value(Platform.OS === "web" ? 0 : 15)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -36,13 +37,13 @@ export default function SplashScreen() {
         toValue: 1,
         duration: 800,
         easing: Easing.out(Easing.back(1.5)),
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
       Animated.timing(logoOpacity, {
         toValue: 1,
         duration: 700,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
     ]).start();
 
@@ -53,14 +54,14 @@ export default function SplashScreen() {
         duration: 600,
         delay: 400,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
       Animated.timing(badgeTranslateY, {
         toValue: 0,
         duration: 600,
         delay: 400,
         easing: Easing.out(Easing.back(1.2)),
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
       Animated.timing(progressAnim, {
         toValue: 1,
@@ -80,8 +81,12 @@ export default function SplashScreen() {
   }, []);
 
   const handleNavigate = () => {
-    if (profile && profile.name) {
-      router.replace("/home" as any);
+    if (isAuthenticated && profile) {
+      if (profile.role === "FACULTY") {
+        router.replace("/faculty-dashboard" as any);
+      } else {
+        router.replace("/pathselection" as any);
+      }
     } else {
       router.replace("/login" as any);
     }
@@ -108,12 +113,10 @@ export default function SplashScreen() {
           ]}
         >
           <View style={styles.iconCircle}>
-            <Feather name="book-open" size={38} color="#FFFFFF" />
+            <Feather name="file-text" size={38} color="#FFFFFF" />
           </View>
 
-          <Text style={styles.brandTitle}>
-            Skill<Text style={styles.brandHighlight}>Exa</Text>
-          </Text>
+          <Text style={styles.brandTitle}>SkillExa</Text>
         </Animated.View>
 
         {/* Tagline & Badges */}

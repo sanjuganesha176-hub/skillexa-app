@@ -280,6 +280,23 @@ export const ApiClient = {
     request<any>('/notifications/read-all', {
       method: 'POST',
     }),
+
+  // 9. Competitive Exams Learning & Unlock Engine
+  competitive: {
+    getExams: () => request<any>('/competitive/exams'),
+    getSubjects: (examId: string) => request<any>('/competitive/exams/' + examId + '/subjects'),
+    getTopics: (subjectId: string = 'english') => request<any>('/competitive/subjects/' + subjectId + '/topics'),
+    getTopicDetails: (topicIdOrSlug: string) => request<any>('/competitive/topics/' + topicIdOrSlug),
+    getTopicPyqs: (topicIdOrSlug: string) => request<any>('/competitive/topics/' + topicIdOrSlug + '/pyqs'),
+    getTopicQuiz: (topicIdOrSlug: string) => request<any>('/competitive/topics/' + topicIdOrSlug + '/quiz'),
+    submitTopicQuiz: (topicIdOrSlug: string, payload: { answers: Record<string, string>; time_spent_seconds: number }) =>
+      request<any>('/competitive/topics/' + topicIdOrSlug + '/quiz/submit', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    getProgress: () => request<any>('/competitive/progress'),
+    resetProgress: () => request<any>('/competitive/progress/reset', { method: 'POST' }),
+  },
 };
 
 /**

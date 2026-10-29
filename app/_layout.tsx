@@ -3,14 +3,25 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { AuthProvider } from "../components/auth-context";
 import { BottomNav } from "../components/common/BottomNav";
+import { ThemeProvider, useTheme } from "../components/theme-context";
+
+function AppContent() {
+  const { isDark } = useTheme();
+
+  return (
+    <View style={[styles.root, isDark && { backgroundColor: '#070B14' }]}>
+      <Stack screenOptions={{ headerShown: false }} />
+      <BottomNav />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <View style={styles.root}>
-        <Stack screenOptions={{ headerShown: false }} />
-        <BottomNav />
-      </View>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

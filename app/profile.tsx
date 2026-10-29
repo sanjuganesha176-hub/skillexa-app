@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
+  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../components/auth-context';
 import { AppHeader } from '../components/common/AppHeader';
+import { useTheme } from '../components/theme-context';
 import { Palette, Radii, Shadows } from '../constants/theme';
 
 const BADGES = [
@@ -24,32 +26,72 @@ const BADGES = [
 
 export default function ProfileScreen() {
   const { profile, logout } = useAuth();
+  const { isDark } = useTheme();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const studentName = profile?.name || 'Ganesh Kumar';
   const studentEmail = profile?.email || 'ganesh@skillexa.edu';
   const initial = studentName.charAt(0).toUpperCase();
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out of your SkillExa account?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: () => {
-            logout();
-            router.replace('/login' as any);
-          },
-        },
-      ]
-    );
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+    router.replace("/login" as any);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppHeader title="Student Profile" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#070B14" : "#FFFFFF"}
+      />
+      <AppHeader
+        showBack
+        title="Student Profile"
+        backLabel="Back"
+        onBack={() => router.back()}
+      />
+
+      {/* Confirmation Modal for Sign Out */}
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalBox, isDark && styles.modalBoxDark]}>
+            <View style={styles.logoutIconBox}>
+              <Feather name="log-out" size={28} color="#EF4444" />
+            </View>
+            <Text style={[styles.modalTitle, isDark && styles.textWhite]}>
+              Sign Out of SkillExa
+            </Text>
+            <Text style={[styles.modalSubtitle, isDark && styles.textMutedDark]}>
+              Are you sure you want to sign out? You will need to sign in again to access your learning modules.
+            </Text>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, isDark && styles.modalCancelBtnDark]}
+                onPress={() => setShowLogoutModal(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.modalCancelBtnText, isDark && styles.textWhite]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalConfirmBtn}
+                onPress={handleConfirmLogout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalConfirmBtnText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
@@ -146,7 +188,7 @@ export default function ProfileScreen() {
 
           <View style={styles.settingDivider} />
 
-          <TouchableOpacity style={styles.settingRow} onPress={handleLogout} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.settingRow} onPress={() => setShowLogoutModal(true)} activeOpacity={0.7}>
             <View style={styles.settingLeft}>
               <Feather name="log-out" size={18} color={Palette.danger} />
               <Text style={[styles.settingLabel, { color: Palette.danger, fontWeight: '700' }]}>Sign Out</Text>
@@ -160,6 +202,93 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Palette.background },
+  safeAreaDark: { backgroundColor: "#070B14" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalBox: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalBoxDark: {
+    backgroundColor: "#0F172A",
+    borderColor: "#1E293B",
+    borderWidth: 1,
+  },
+  logoutIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 13.5,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+  },
+  modalCancelBtnDark: {
+    backgroundColor: "#1E293B",
+  },
+  modalCancelBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#334155",
+  },
+  modalConfirmBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+  },
+  modalConfirmBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  textWhite: {
+    color: "#F8FAFC",
+  },
+  textMutedDark: {
+    color: "#94A3B8",
+  },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
   profileCard: {
     backgroundColor: '#FFFFFF',

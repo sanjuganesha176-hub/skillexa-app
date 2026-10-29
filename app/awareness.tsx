@@ -80,6 +80,7 @@ export default function AwarenessPage() {
                     params: {
                       subject: 'General Awareness',
                       topic: topic.title,
+                      topicId: topic.id,
                     },
                   })
                 }

@@ -92,7 +92,6 @@ export default function MyCollegeScreen() {
         showBack
         title={mainScope === 'my-college' ? 'My College' : 'SkillExa Community'}
         subtitle={mainScope === 'my-college' ? profile.collegeName || 'KVG College of Engineering' : 'Discover Public Educator Content'}
-        rightAction={<NotificationBellButton />}
       />
 
       {/* 🌍 MAIN TOP-LEVEL SCOPE SWITCHER: 🏫 My College vs 🌍 SkillExa Community */}

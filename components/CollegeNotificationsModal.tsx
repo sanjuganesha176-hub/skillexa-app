@@ -150,12 +150,12 @@ export function NotificationBellButton() {
 
 const styles = StyleSheet.create({
   bellBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Palette.backgroundSecondary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Palette.border,
+    borderColor: '#e2e8f0',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',

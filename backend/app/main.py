@@ -22,6 +22,21 @@ from backend.app.models.college import College
 from backend.app.models.note import FacultyNote
 from backend.app.models.quiz import Quiz
 from backend.app.models.user import User
+# Ensure competitive models are registered with Base metadata
+from backend.app.models.competitive import (
+    CompetitiveExam,
+    CompetitiveSubject,
+    CompetitiveTopic,
+    TopicContent,
+    TopicExample,
+    PreviousYearQuestion,
+    CompetitiveQuiz,
+    CompetitiveQuizQuestion,
+    StudentTopicProgress,
+    CompetitiveQuizAttempt,
+    Source,
+    ContentVerification,
+)
 from backend.app.routers import (
     assignments_router,
     auth_router,
@@ -37,8 +52,10 @@ from backend.app.routers import (
     quizzes_router,
     student_router,
     videos_router,
+    competitive_router,
 )
 from backend.app.seed import seed_database
+from backend.app.seed_competitive import seed_competitive_curriculum
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("skillexa.main")
@@ -49,6 +66,7 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing SkillExa database tables...")
     Base.metadata.create_all(bind=engine)
     seed_database()
+    seed_competitive_curriculum()
     logger.info("SkillExa FastAPI Backend started successfully.")
     yield
     logger.info("SkillExa FastAPI Backend shutting down.")
@@ -56,7 +74,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Comprehensive Python FastAPI Backend for SkillExa — Student Learning, College Connection, Faculty Portal, Coding/DSA & Community Engine.",
+    description="Comprehensive Python FastAPI Backend for SkillExa — Student Learning, College Connection, Faculty Portal, Coding/DSA & Competitive Exam Learning System.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -85,6 +103,7 @@ app.include_router(coding_router, prefix=settings.API_V1_STR)
 app.include_router(interviews_router, prefix=settings.API_V1_STR)
 app.include_router(notifications_router, prefix=settings.API_V1_STR)
 app.include_router(progress_router, prefix=settings.API_V1_STR)
+app.include_router(competitive_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", tags=["Health"])
@@ -115,6 +134,7 @@ def fullstack_health_check(db: Session = Depends(get_db)):
         users_count = db.query(User).count()
         notes_count = db.query(FacultyNote).count()
         quizzes_count = db.query(Quiz).count()
+        competitive_topics_count = db.query(CompetitiveTopic).count()
 
         return {
             "status": "ok",
@@ -127,6 +147,7 @@ def fullstack_health_check(db: Session = Depends(get_db)):
                     "users": users_count,
                     "notes": notes_count,
                     "quizzes": quizzes_count,
+                    "competitive_topics": competitive_topics_count,
                 },
             },
             "environment": settings.ENVIRONMENT,

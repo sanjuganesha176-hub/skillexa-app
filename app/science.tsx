@@ -80,6 +80,7 @@ export default function SciencePage() {
                     params: {
                       subject: 'General Science',
                       topic: topic.title,
+                      topicId: topic.id,
                     },
                   })
                 }

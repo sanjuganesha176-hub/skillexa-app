@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+  Dimensions,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -12,338 +13,538 @@ import {
 } from 'react-native';
 import { useAuth } from '../components/auth-context';
 import { AppHeader } from '../components/common/AppHeader';
-import { ProgressBar } from '../components/common/EducationalCards';
-import { Palette, Radii, Shadows } from '../constants/theme';
+import { Palette, Radii, Shadows, Gradients } from '../constants/theme';
+import { TopicProgressStore } from '../data/skillexaCurriculum';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+interface CourseCardData {
+  id: string;
+  name: string;
+  category: string;
+  tagline: string;
+  topicsCount: number;
+  completedCount: number;
+  route: string;
+  icon: keyof typeof Feather.glyphMap;
+  accentColor: string;
+}
+
+interface EngineeringModuleData {
+  id: string;
+  name: string;
+  category: string;
+  tagline: string;
+  meta: string;
+  route: string;
+  icon: keyof typeof Feather.glyphMap;
+  accentColor: string;
+  badge?: string;
+}
+
+const COURSES: CourseCardData[] = [
+  {
+    id: 'english',
+    name: 'English Language',
+    category: 'Grammar & Vocabulary',
+    tagline: 'Master grammar, vocabulary, comprehension, and error spotting.',
+    topicsCount: 22,
+    completedCount: 1,
+    route: '/english',
+    icon: 'book-open',
+    accentColor: '#38BDF8',
+  },
+  {
+    id: 'mathematics',
+    name: 'Quantitative Aptitude',
+    category: 'Arithmetic & Problem Solving',
+    tagline: 'Arithmetic, algebra, geometry, mensuration and numerical aptitude.',
+    topicsCount: 15,
+    completedCount: 2,
+    route: '/mathematics',
+    icon: 'percent',
+    accentColor: '#A855F7',
+  },
+  {
+    id: 'reasoning',
+    name: 'Logical Reasoning',
+    category: 'Logical & Analytical',
+    tagline: 'Syllogism, seating arrangement, coding-decoding and deduction.',
+    topicsCount: 14,
+    completedCount: 3,
+    route: '/reasoning',
+    icon: 'cpu',
+    accentColor: '#10B981',
+  },
+  {
+    id: 'general-awareness',
+    name: 'General Awareness',
+    category: 'GK & Current Affairs',
+    tagline: 'Indian history, polity, geography, economics and daily news.',
+    topicsCount: 11,
+    completedCount: 2,
+    route: '/awareness',
+    icon: 'globe',
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'general-science',
+    name: 'General Science',
+    category: 'Physics, Chem & Bio',
+    tagline: 'Everyday physics, chemical principles, human physiology and tech.',
+    topicsCount: 6,
+    completedCount: 2,
+    route: '/science',
+    icon: 'activity',
+    accentColor: '#EC4899',
+  },
+  {
+    id: 'physical-fitness',
+    name: 'Physical Fitness',
+    category: 'Physical Standards Tests',
+    tagline: 'Endurance, running milestones, push-ups and fitness routines.',
+    topicsCount: 9,
+    completedCount: 4,
+    route: '/fitness',
+    icon: 'zap',
+    accentColor: '#3B82F6',
+  },
+];
+
+const ENGINEERING_MODULES: EngineeringModuleData[] = [
+  {
+    id: 'coding-problems',
+    name: 'Coding Problems',
+    category: 'Programming & Logic',
+    tagline: 'Solve real-world programming problems in Python, C++, Java & JS with in-app compiler.',
+    meta: '120+ Problems',
+    route: '/coding-problems',
+    icon: 'terminal',
+    accentColor: '#38BDF8',
+  },
+  {
+    id: 'dsa-practice',
+    name: 'DSA Roadmap & Practice',
+    category: 'Data Structures & Algorithms',
+    tagline: 'Master 17 structured topics from arrays and linked lists to trees, graphs and DP.',
+    meta: '17 Topics',
+    route: '/dsa-practice',
+    icon: 'code',
+    accentColor: '#10B981',
+  },
+  {
+    id: 'mock-interviews',
+    name: 'AI Mock Interview',
+    category: 'Career & Technical Prep',
+    tagline: 'Practice technical & HR interview questions with instant voice/text AI evaluation.',
+    meta: 'AI Evaluated',
+    route: '/mock-interviews',
+    icon: 'message-square',
+    accentColor: '#A855F7',
+    badge: 'AI POWERED',
+  },
+  {
+    id: 'resume-builder',
+    name: 'ATS Resume Builder',
+    category: 'Professional Portfolio',
+    tagline: 'Build ATS-optimized, high-scoring resumes for software & core engineering roles.',
+    meta: '3 Formats',
+    route: '/resume-builder',
+    icon: 'file-text',
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'placement-preparation',
+    name: 'Placement Preparation',
+    category: 'Campus Placements',
+    tagline: 'Company profiles, previous aptitude rounds, technical MCQs & campus guides.',
+    meta: '12 Top Companies',
+    route: '/placement-preparation',
+    icon: 'briefcase',
+    accentColor: '#EC4899',
+  },
+];
 
 export default function HomeScreen() {
   const { profile } = useAuth();
   const userName = profile?.name || 'Scholar';
 
-  const weeklyDays = [
-    { day: 'Mon', count: 18, isToday: false },
-    { day: 'Tue', count: 24, isToday: false },
-    { day: 'Wed', count: 12, isToday: false },
-    { day: 'Thu', count: 30, isToday: false },
-    { day: 'Fri', count: 22, isToday: false },
-    { day: 'Sat', count: 35, isToday: true },
-    { day: 'Sun', count: 0, isToday: false },
-  ];
+  const [activeTab, setActiveTab] = useState<'home' | 'courses' | 'progress' | 'papers'>('home');
+  const [selectedTrack, setSelectedTrack] = useState<'all' | 'engineering' | 'competitive'>('all');
+  const [completedTopics, setCompletedTopics] = useState<number>(1);
+
+  useEffect(() => {
+    const updateStats = () => {
+      const allProg = TopicProgressStore.getAllProgress();
+      const done = Object.values(allProg).filter(p => p.status === 'COMPLETED').length;
+      setCompletedTopics(done);
+    };
+
+    updateStats();
+    const unsub = TopicProgressStore.subscribe(updateStats);
+    return unsub;
+  }, []);
+
+  const totalTopics = COURSES.reduce((acc, c) => acc + c.topicsCount, 0) + (ENGINEERING_MODULES.length * 5);
+  const totalCompleted = completedTopics + 13 + 3;
+  const overallPercentage = Math.round((totalCompleted / totalTopics) * 100);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#070B14" />
       <AppHeader />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Greeting */}
-        <View style={styles.greetingHeader}>
-          <Text style={styles.greetingTitle}>Good morning, {userName} 👋</Text>
-          <Text style={styles.greetingSubtitle}>Let&apos;s build your skills today.</Text>
-        </View>
-
-        {/* 1. Today's Goal Card */}
-        <View style={styles.goalCard}>
-          <View style={styles.goalTopRow}>
-            <View style={styles.goalIconBox}>
-              <Feather name="target" size={18} color={Palette.primary} />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Navigation Bar */}
+        <View style={styles.subHeaderNav}>
+          <View style={styles.logoRow}>
+            <View style={styles.logoIcon}>
+              <Feather name="layers" size={18} color="#38BDF8" />
             </View>
-            <View style={styles.goalTitleCol}>
-              <Text style={styles.goalLabel}>TODAY&apos;S GOAL</Text>
-              <Text style={styles.goalTitle}>Complete 20 practice questions</Text>
+            <View>
+              <Text style={styles.brandTitle}>Skillexa</Text>
+              <Text style={styles.brandTagline}>Learn • Practice • Grow</Text>
             </View>
-            <Text style={styles.goalPercent}>60%</Text>
           </View>
 
-          <View style={styles.goalProgressWrapper}>
-            <ProgressBar progress={0.6} color={Palette.primary} />
-            <Text style={styles.goalProgressDetail}>12 of 20 solved</Text>
+          <View style={styles.navLinks}>
+            <TouchableOpacity
+              style={[styles.navLinkItem, activeTab === 'home' && styles.navLinkItemActive]}
+              onPress={() => setActiveTab('home')}
+            >
+              <Text style={[styles.navLinkText, activeTab === 'home' && styles.navLinkTextActive]}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navLinkItem, activeTab === 'courses' && styles.navLinkItemActive]}
+              onPress={() => router.push('/courses' as any)}
+            >
+              <Text style={styles.navLinkText}>Courses</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navLinkItem, activeTab === 'progress' && styles.navLinkItemActive]}
+              onPress={() => router.push('/progress')}
+            >
+              <Text style={styles.navLinkText}>Progress</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navLinkItem, activeTab === 'papers' && styles.navLinkItemActive]}
+              onPress={() => router.push('/previous-papers' as any)}
+            >
+              <Text style={styles.navLinkText}>Question Papers</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => router.push('/quizzpage' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.primaryBtnText}>Continue Practice</Text>
-            <Feather name="arrow-right" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
 
-        {/* 🏫 MY COLLEGE WORKSPACE HERO CARD */}
-        <TouchableOpacity
-          style={styles.collegeHeroCard}
-          onPress={() => router.push('/my-college' as any)}
-          activeOpacity={0.85}
-        >
-          <View style={styles.collegeHeroTop}>
-            <View style={styles.collegeIconBox}>
-              <Feather name="book-open" size={22} color={Palette.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.collegeTagRow}>
-                <View style={styles.collegePill}>
-                  <Text style={styles.collegePillText}>🏫 MY COLLEGE</Text>
-                </View>
-                <View style={styles.notifPill}>
-                  <Text style={styles.notifPillText}>3 New Updates</Text>
-                </View>
-              </View>
-              <Text style={styles.collegeTitle}>{profile.collegeName || 'KVG College of Engineering'}</Text>
-              <Text style={styles.collegeSub}>
-                {profile.department || 'ECE'} • {profile.academicYear || '3rd Year'} Sec {profile.section || 'A'}
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroBadge}>
+            <View style={styles.heroBadgeDot} />
+            <Text style={styles.heroBadgeText}>
+              {selectedTrack === 'all'
+                ? 'DUAL-TRACK PLATFORM • ENGINEERING & COMPETITIVE EXAMS'
+                : selectedTrack === 'engineering'
+                ? 'ENGINEERING & TECHNICAL CAREER TRACK'
+                : 'COMPETITIVE EXAM PREPARATION PLATFORM'}
+            </Text>
+          </View>
+
+          <Text style={styles.heroTitle}>
+            {selectedTrack === 'all'
+              ? 'Build Skills. Crack Exams. Master Engineering.'
+              : selectedTrack === 'engineering'
+              ? 'Code, Solve DSA & Ace Engineering Placements'
+              : 'Build Your Skills. Prepare With Confidence.'}
+          </Text>
+          <Text style={styles.heroSubtitle}>
+            {selectedTrack === 'all'
+              ? 'Learn technical engineering modules alongside competitive examination curriculum in one unified workspace.'
+              : selectedTrack === 'engineering'
+              ? 'Practice real coding problems, master DSA roadmap, build ATS resumes and mock interview with AI.'
+              : 'Learn concepts, practice real previous year questions, and unlock your next level.'}
+          </Text>
+
+          {/* Track Switcher Segmented Control */}
+          <View style={styles.trackSwitcherWrapper}>
+            <TouchableOpacity
+              style={[styles.trackTab, selectedTrack === 'all' && styles.trackTabActiveAll]}
+              onPress={() => setSelectedTrack('all')}
+              activeOpacity={0.8}
+            >
+              <Feather
+                name="layers"
+                size={14}
+                color={selectedTrack === 'all' ? '#070B14' : '#94A3B8'}
+              />
+              <Text
+                style={[
+                  styles.trackTabText,
+                  selectedTrack === 'all' && styles.trackTabTextActiveDark,
+                ]}
+              >
+                Both Tracks
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.trackTab,
+                selectedTrack === 'engineering' && styles.trackTabActiveEngineering,
+              ]}
+              onPress={() => setSelectedTrack('engineering')}
+              activeOpacity={0.8}
+            >
+              <Feather
+                name="cpu"
+                size={14}
+                color={selectedTrack === 'engineering' ? '#FFFFFF' : '#94A3B8'}
+              />
+              <Text
+                style={[
+                  styles.trackTabText,
+                  selectedTrack === 'engineering' && styles.trackTabTextActiveWhite,
+                ]}
+              >
+                Engineering (5)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.trackTab,
+                selectedTrack === 'competitive' && styles.trackTabActiveCompetitive,
+              ]}
+              onPress={() => setSelectedTrack('competitive')}
+              activeOpacity={0.8}
+            >
+              <Feather
+                name="award"
+                size={14}
+                color={selectedTrack === 'competitive' ? '#FFFFFF' : '#94A3B8'}
+              />
+              <Text
+                style={[
+                  styles.trackTabText,
+                  selectedTrack === 'competitive' && styles.trackTabTextActiveWhite,
+                ]}
+              >
+                Competitive (6)
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Path Selection Banner */}
+          <View style={styles.pathSwitchBanner}>
+            <View style={styles.pathSwitchLeft}>
+              <Feather name="compass" size={16} color="#38BDF8" />
+              <Text style={styles.pathSwitchText}>
+                Want full track customization? Choose in Path Selector:
               </Text>
             </View>
-          </View>
-
-          <View style={styles.collegeHeroFooter}>
-            <Text style={styles.collegeActionText}>Open College Workspace (Notices, Notes, Quizzes)</Text>
-            <Feather name="arrow-right" size={15} color={Palette.primary} />
-          </View>
-        </TouchableOpacity>
-
-        {/* 2. Continue Learning Carousel */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Continue Learning</Text>
-          <Text style={styles.sectionSubtitle}>Jump back into your active tracks</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {/* Card 1: DSA */}
-          <View style={styles.continueCard}>
-            <View style={styles.trackBadge}>
-              <Text style={styles.trackBadgeText}>DSA</Text>
-            </View>
-            <Text style={styles.continueModuleTitle}>Arrays & Memory</Text>
-            <Text style={styles.continueProgressText}>65% complete</Text>
-            <View style={styles.continueProgressBar}>
-              <ProgressBar progress={0.65} color={Palette.primary} />
-            </View>
             <TouchableOpacity
-              style={styles.continueBtn}
-              onPress={() => router.push('/dsa-practice' as any)}
+              style={styles.pathSwitchBtn}
+              onPress={() => router.push('/pathselection' as any)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.continueBtnText}>Continue</Text>
-              <Feather name="play" size={12} color={Palette.primary} />
+              <Text style={styles.pathSwitchBtnText}>Path Selector →</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Card 2: English */}
-          <View style={styles.continueCard}>
-            <View style={[styles.trackBadge, { backgroundColor: Palette.warningLight }]}>
-              <Text style={[styles.trackBadgeText, { color: Palette.warning }]}>ENGLISH</Text>
-            </View>
-            <Text style={styles.continueModuleTitle}>Tenses & Rules</Text>
-            <Text style={styles.continueProgressText}>40% complete</Text>
-            <View style={styles.continueProgressBar}>
-              <ProgressBar progress={0.4} color={Palette.warning} />
-            </View>
-            <TouchableOpacity
-              style={styles.continueBtn}
-              onPress={() => router.push('/english' as any)}
-            >
-              <Text style={styles.continueBtnText}>Continue</Text>
-              <Feather name="play" size={12} color={Palette.primary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Card 3: Quantitative Math */}
-          <View style={styles.continueCard}>
-            <View style={[styles.trackBadge, { backgroundColor: Palette.successLight }]}>
-              <Text style={[styles.trackBadgeText, { color: Palette.success }]}>MATH</Text>
-            </View>
-            <Text style={styles.continueModuleTitle}>Percentage & Profit</Text>
-            <Text style={styles.continueProgressText}>50% complete</Text>
-            <View style={styles.continueProgressBar}>
-              <ProgressBar progress={0.5} color={Palette.success} />
-            </View>
-            <TouchableOpacity
-              style={styles.continueBtn}
-              onPress={() => router.push('/mathematics' as any)}
-            >
-              <Text style={styles.continueBtnText}>Continue</Text>
-              <Feather name="play" size={12} color={Palette.primary} />
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-
-        {/* 3. Choose Your Path */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Choose Your Path</Text>
-          <Text style={styles.sectionSubtitle}>Select your main academic track</Text>
-        </View>
-
-        <View style={styles.pathsContainer}>
-          {/* Engineering Path Card */}
-          <TouchableOpacity
-            style={styles.pathLargeCard}
-            onPress={() => router.push('/engineering' as any)}
-            activeOpacity={0.88}
-          >
-            <View style={styles.pathIconHeader}>
-              <View style={styles.pathIconCircle}>
-                <Feather name="cpu" size={24} color={Palette.primary} />
+          {/* User Overall Progress Grid */}
+          <View style={styles.statsCard}>
+            <View style={styles.statsHeader}>
+              <View>
+                <Text style={styles.statsHeaderTitle}>Your Overall Progress</Text>
+                <Text style={styles.statsHeaderSub}>
+                  {selectedTrack === 'all'
+                    ? 'Readiness across Engineering modules & Competitive exam tracks'
+                    : selectedTrack === 'engineering'
+                    ? 'Track your engineering learning & coding milestone completions'
+                    : 'Track your exam readiness across all syllabus tracks'}
+                </Text>
               </View>
-              <View style={styles.pathBadge}>
-                <Text style={styles.pathBadgeText}>5 Modules</Text>
+              <View style={styles.percentageBadge}>
+                <Text style={styles.percentageBadgeText}>{overallPercentage}%</Text>
               </View>
             </View>
-            <Text style={styles.pathLargeTitle}>Engineering Learning</Text>
-            <Text style={styles.pathLargeDesc}>
-              Coding • DSA • Resume • Interview • Placement Ready
-            </Text>
-            <View style={styles.pathCardFooter}>
-              <Text style={styles.pathExploreText}>Explore Engineering</Text>
-              <Feather name="arrow-right" size={16} color={Palette.primary} />
+
+            {/* Overall Progress Bar */}
+            <View style={styles.overallProgressTrack}>
+              <View style={[styles.overallProgressFill, { width: `${overallPercentage}%` }]} />
             </View>
-          </TouchableOpacity>
 
-          {/* Competitive Exams Path Card */}
-          <TouchableOpacity
-            style={styles.pathLargeCard}
-            onPress={() => router.push('/competitive' as any)}
-            activeOpacity={0.88}
-          >
-            <View style={styles.pathIconHeader}>
-              <View style={[styles.pathIconCircle, { backgroundColor: Palette.warningLight }]}>
-                <Feather name="award" size={24} color={Palette.warning} />
-              </View>
-              <View style={[styles.pathBadge, { backgroundColor: Palette.warningLight }]}>
-                <Text style={[styles.pathBadgeText, { color: Palette.warning }]}>6 Subjects</Text>
-              </View>
-            </View>
-            <Text style={styles.pathLargeTitle}>Competitive Exams</Text>
-            <Text style={styles.pathLargeDesc}>
-              Aptitude • Reasoning • English • GK • Science • Fitness
-            </Text>
-            <View style={styles.pathCardFooter}>
-              <Text style={[styles.pathExploreText, { color: Palette.warning }]}>Explore Competitive</Text>
-              <Feather name="arrow-right" size={16} color={Palette.warning} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* 4. Quick Practice Actions */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Quick Practice</Text>
-          <Text style={styles.sectionSubtitle}>Jump into targeted drills</Text>
-        </View>
-
-        <View style={styles.quickGrid}>
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => router.push('/coding-problems' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.quickIconCircle}>
-              <Feather name="terminal" size={18} color={Palette.primary} />
-            </View>
-            <Text style={styles.quickLabel}>Coding</Text>
-            <Text style={styles.quickMeta}>250+ Problems</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => router.push('/dsa-practice' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.quickIconCircle, { backgroundColor: Palette.successLight }]}>
-              <Feather name="code" size={18} color={Palette.success} />
-            </View>
-            <Text style={styles.quickLabel}>DSA Roadmap</Text>
-            <Text style={styles.quickMeta}>12 Topics</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => router.push('/quizzpage' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.quickIconCircle, { backgroundColor: Palette.warningLight }]}>
-              <Feather name="edit-3" size={18} color={Palette.warning} />
-            </View>
-            <Text style={styles.quickLabel}>Topic Quiz</Text>
-            <Text style={styles.quickMeta}>Timed Drills</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => router.push('/mock-interviews' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.quickIconCircle, { backgroundColor: Palette.aiPurpleLight }]}>
-              <Feather name="message-square" size={18} color={Palette.aiPurple} />
-            </View>
-            <Text style={styles.quickLabel}>AI Interview</Text>
-            <Text style={styles.quickMeta}>Voice & Tech</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 5. Weekly Activity Chart */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Weekly Progress</Text>
-          <Text style={styles.sectionSubtitle}>110 questions solved this week</Text>
-        </View>
-
-        <View style={styles.weeklyCard}>
-          <View style={styles.chartBarsRow}>
-            {weeklyDays.map((d, i) => {
-              const max = 35;
-              const barHeight = Math.max((d.count / max) * 70, 8);
-              return (
-                <View key={i} style={styles.chartCol}>
-                  <Text style={styles.barCount}>{d.count > 0 ? d.count : ''}</Text>
-                  <View style={styles.barTrack}>
-                    <View
-                      style={[
-                        styles.barFill,
-                        { height: barHeight },
-                        d.isToday && styles.barFillToday,
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.barDayLabel, d.isToday && styles.barDayToday]}>
-                    {d.day}
-                  </Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <View style={[styles.statIconWrap, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
+                  <Feather name="check-circle" size={16} color="#38BDF8" />
                 </View>
-              );
-            })}
+                <Text style={styles.statValue}>{totalCompleted} / {totalTopics}</Text>
+                <Text style={styles.statLabel}>Topics & Units</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <View style={[styles.statIconWrap, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
+                  <Feather name="award" size={16} color="#A855F7" />
+                </View>
+                <Text style={styles.statValue}>18 Quizzes</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <View style={[styles.statIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                  <Feather name="trending-up" size={16} color="#10B981" />
+                </View>
+                <Text style={styles.statValue}>84%</Text>
+                <Text style={styles.statLabel}>Avg Mastery</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <View style={[styles.statIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                  <Feather name="zap" size={16} color="#F59E0B" />
+                </View>
+                <Text style={styles.statValue}>7 Days 🔥</Text>
+                <Text style={styles.statLabel}>Learning Streak</Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* 6. Recommended For You */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recommended for You</Text>
-          <Text style={styles.sectionSubtitle}>Based on your recent performance</Text>
-        </View>
-
-        <View style={styles.recommendCard}>
-          <View style={styles.recommendHeader}>
-            <View style={styles.recommendIconBox}>
-              <Feather name="trending-up" size={18} color={Palette.primary} />
+        {/* 1. ENGINEERING LEARNING SECTION */}
+        {(selectedTrack === 'all' || selectedTrack === 'engineering') && (
+          <View style={styles.coursesSection}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[styles.sectionIconBadge, { backgroundColor: 'rgba(0, 102, 255, 0.15)' }]}>
+                    <Feather name="cpu" size={16} color="#38BDF8" />
+                  </View>
+                  <Text style={styles.sectionTitle}>Engineering Learning Modules</Text>
+                </View>
+                <Text style={styles.sectionSubtitle}>
+                  Coding, DSA roadmap, AI mock interview, ATS resume & placement readiness
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/engineering' as any)}>
+                <Text style={styles.viewAllText}>Full Dashboard (5) →</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.recommendInfo}>
-              <Text style={styles.recommendTitle}>Practice Percentage — Medium</Text>
-              <Text style={styles.recommendStats}>Your current accuracy: 54%</Text>
+
+            <View style={styles.coursesGrid}>
+              {ENGINEERING_MODULES.map((mod) => (
+                <View key={mod.id} style={styles.courseCard}>
+                  <View style={styles.courseCardTop}>
+                    <View style={[styles.courseIconWrap, { backgroundColor: `${mod.accentColor}18` }]}>
+                      <Feather name={mod.icon} size={22} color={mod.accentColor} />
+                    </View>
+                    <View style={[styles.courseBadge, mod.badge ? { borderColor: mod.accentColor } : {}]}>
+                      <Text
+                        style={[
+                          styles.courseBadgeText,
+                          mod.badge ? { color: mod.accentColor, fontWeight: '800' } : {},
+                        ]}
+                      >
+                        {mod.badge || mod.meta}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.courseName}>{mod.name}</Text>
+                  <Text style={styles.courseCategory}>{mod.category}</Text>
+                  <Text style={styles.courseTagline}>{mod.tagline}</Text>
+
+                  <TouchableOpacity
+                    style={[styles.continueButton, { borderColor: `${mod.accentColor}40` }]}
+                    onPress={() => router.push(mod.route as any)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.continueButtonText, { color: mod.accentColor }]}>
+                      Explore Module
+                    </Text>
+                    <Feather name="arrow-right" size={16} color={mod.accentColor} />
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
           </View>
-          <Text style={styles.recommendDesc}>
-            Boosting your accuracy in Quantitative Aptitude by 15% unlocks placement level evaluations.
-          </Text>
-          <TouchableOpacity
-            style={styles.recommendBtn}
-            onPress={() => router.push('/mathematics' as any)}
-          >
-            <Text style={styles.recommendBtnText}>Practice Now</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        )}
+
+        {/* 2. COMPETITIVE EXAMS SECTION */}
+        {(selectedTrack === 'all' || selectedTrack === 'competitive') && (
+          <View style={styles.coursesSection}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[styles.sectionIconBadge, { backgroundColor: 'rgba(217, 119, 6, 0.15)' }]}>
+                    <Feather name="award" size={16} color="#F59E0B" />
+                  </View>
+                  <Text style={styles.sectionTitle}>Competitive Exam Subjects</Text>
+                </View>
+                <Text style={styles.sectionSubtitle}>
+                  Aptitude, reasoning, English, science, GK & physical standards suite
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/competitive' as any)}>
+                <Text style={styles.viewAllText}>Full Dashboard (6) →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.coursesGrid}>
+              {COURSES.map((course) => {
+                const completed = course.id === 'english' ? completedTopics : course.completedCount;
+                const percent = Math.round((completed / course.topicsCount) * 100);
+
+                return (
+                  <View key={course.id} style={styles.courseCard}>
+                    <View style={styles.courseCardTop}>
+                      <View style={[styles.courseIconWrap, { backgroundColor: `${course.accentColor}18` }]}>
+                        <Feather name={course.icon} size={22} color={course.accentColor} />
+                      </View>
+                      <View style={styles.courseBadge}>
+                        <Text style={styles.courseBadgeText}>{course.topicsCount} Topics</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.courseName}>{course.name}</Text>
+                    <Text style={styles.courseCategory}>{course.category}</Text>
+                    <Text style={styles.courseTagline}>{course.tagline}</Text>
+
+                    {/* Progress bar */}
+                    <View style={styles.courseProgressSection}>
+                      <View style={styles.courseProgressHeader}>
+                        <Text style={styles.courseProgressLabel}>
+                          {completed} of {course.topicsCount} Completed
+                        </Text>
+                        <Text style={[styles.courseProgressPercent, { color: course.accentColor }]}>
+                          {percent}%
+                        </Text>
+                      </View>
+                      <View style={styles.courseProgressTrack}>
+                        <View
+                          style={[
+                            styles.courseProgressFill,
+                            { width: `${Math.max(percent, 5)}%`, backgroundColor: course.accentColor },
+                          ]}
+                        />
+                      </View>
+                    </View>
+
+                    {/* Continue Button */}
+                    <TouchableOpacity
+                      style={styles.continueButton}
+                      onPress={() => router.push(course.route as any)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.continueButtonText}>Start Practice</Text>
+                      <Feather name="arrow-right" size={16} color="#38BDF8" />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Bottom Spacing */}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -352,440 +553,406 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Palette.background,
+    backgroundColor: '#070B14',
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
-  greetingHeader: {
+  subHeaderNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  greetingTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Palette.textTitle,
-  },
-  greetingSubtitle: {
-    fontSize: 14,
-    color: Palette.textSecondary,
-    marginTop: 3,
-  },
-  goalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    marginBottom: 24,
-    ...Shadows.card,
-  },
-  goalTopRow: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
   },
-  goalIconBox: {
+  logoIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Palette.primaryLight,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  goalTitleCol: {
-    flex: 1,
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: 0.3,
   },
-  goalLabel: {
+  brandTagline: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#38BDF8',
+  },
+  navLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
+  },
+  navLinkItem: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  navLinkItemActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#38BDF8',
+  },
+  navLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  navLinkTextActive: {
+    color: '#38BDF8',
+  },
+  heroSection: {
+    marginBottom: 28,
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
+  },
+  heroBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#38BDF8',
+  },
+  heroBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    color: Palette.primary,
-    letterSpacing: 0.8,
+    color: '#38BDF8',
+    letterSpacing: 0.6,
   },
-  goalTitle: {
-    fontSize: 15,
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    lineHeight: 34,
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#94A3B8',
+    lineHeight: 21,
+    marginBottom: 18,
+  },
+  trackSwitcherWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  trackTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  trackTabActiveAll: {
+    backgroundColor: '#38BDF8',
+  },
+  trackTabActiveEngineering: {
+    backgroundColor: '#0066FF',
+  },
+  trackTabActiveCompetitive: {
+    backgroundColor: '#D97706',
+  },
+  trackTabText: {
+    fontSize: 12.5,
     fontWeight: '700',
-    color: Palette.textTitle,
-    marginTop: 2,
+    color: '#94A3B8',
   },
-  goalPercent: {
+  trackTabTextActiveDark: {
+    color: '#070B14',
+  },
+  trackTabTextActiveWhite: {
+    color: '#FFFFFF',
+  },
+  pathSwitchBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.2)',
+    marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  pathSwitchLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 220,
+  },
+  pathSwitchText: {
+    fontSize: 12.5,
+    color: '#CBD5E1',
+    fontWeight: '500',
+  },
+  pathSwitchBtn: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  pathSwitchBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#38BDF8',
+  },
+  statsCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    ...Shadows.card,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  statsHeaderTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: Palette.primary,
+    color: '#F8FAFC',
   },
-  goalProgressWrapper: {
+  statsHeaderSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    maxWidth: 240,
+  },
+  percentageBadge: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  percentageBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  overallProgressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  overallProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#38BDF8',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statBox: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  statIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  coursesSection: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     marginBottom: 16,
   },
-  goalProgressDetail: {
-    fontSize: 12,
-    color: Palette.textSecondary,
-    marginTop: 6,
+  sectionIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  primaryBtn: {
-    backgroundColor: Palette.primary,
-    borderRadius: Radii.button,
-    paddingVertical: 12,
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  sectionSubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#38BDF8',
+  },
+  coursesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  courseCard: {
+    width: SCREEN_WIDTH > 768 ? '31.5%' : '100%',
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    ...Shadows.card,
+  },
+  courseCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  courseIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  courseBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  courseBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  courseName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 2,
+  },
+  courseCategory: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  courseTagline: {
+    fontSize: 13,
+    color: '#94A3B8',
+    lineHeight: 18,
+    marginBottom: 16,
+    minHeight: 36,
+  },
+  courseProgressSection: {
+    marginBottom: 16,
+  },
+  courseProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  courseProgressLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  courseProgressPercent: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  courseProgressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    overflow: 'hidden',
+  },
+  courseProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  continueButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    ...Shadows.button,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
   },
-  primaryBtnText: {
-    color: '#FFFFFF',
+  continueButtonText: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  sectionHeaderRow: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Palette.textTitle,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: Palette.textSecondary,
-    marginTop: 2,
-  },
-  horizontalScroll: {
-    gap: 12,
-    paddingBottom: 4,
-    marginBottom: 24,
-  },
-  continueCard: {
-    width: 200,
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
-  },
-  trackBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: Palette.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  trackBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: Palette.primary,
-    letterSpacing: 0.6,
-  },
-  continueModuleTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Palette.textTitle,
-    marginBottom: 6,
-  },
-  continueProgressText: {
-    fontSize: 12,
-    color: Palette.textSecondary,
-    marginBottom: 8,
-  },
-  continueProgressBar: {
-    marginBottom: 12,
-  },
-  continueBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: Palette.primaryLight,
-  },
-  continueBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Palette.primary,
-  },
-  pathsContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
-  pathLargeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
-  },
-  pathIconHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  pathIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Palette.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pathBadge: {
-    backgroundColor: Palette.primaryLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  pathBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Palette.primary,
-  },
-  pathLargeTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Palette.textTitle,
-    marginBottom: 4,
-  },
-  pathLargeDesc: {
-    fontSize: 13,
-    color: Palette.textSecondary,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  pathCardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  pathExploreText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Palette.primary,
-  },
-  quickGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 24,
-  },
-  quickCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
-  },
-  quickIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Palette.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  quickLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Palette.textTitle,
-  },
-  quickMeta: {
-    fontSize: 11,
-    color: Palette.textSecondary,
-    marginTop: 2,
-  },
-  weeklyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    marginBottom: 24,
-    ...Shadows.card,
-  },
-  chartBarsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 110,
-    paddingTop: 10,
-  },
-  chartCol: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  barCount: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Palette.textSecondary,
-    marginBottom: 4,
-  },
-  barTrack: {
-    width: 14,
-    height: 70,
-    backgroundColor: Palette.backgroundSecondary,
-    borderRadius: 7,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    backgroundColor: Palette.primaryBorder,
-    borderRadius: 7,
-  },
-  barFillToday: {
-    backgroundColor: Palette.primary,
-  },
-  barDayLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Palette.textSecondary,
-    marginTop: 6,
-  },
-  barDayToday: {
-    color: Palette.primary,
-    fontWeight: '800',
-  },
-  recommendCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
-  },
-  recommendHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  recommendIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Palette.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  recommendInfo: {
-    flex: 1,
-  },
-  recommendTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Palette.textTitle,
-  },
-  recommendStats: {
-    fontSize: 12,
-    color: Palette.primary,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  recommendDesc: {
-    fontSize: 13,
-    color: Palette.textBody,
-    lineHeight: 19,
-    marginBottom: 14,
-  },
-  recommendBtn: {
-    backgroundColor: Palette.primary,
-    borderRadius: Radii.button,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  recommendBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  collegeHeroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.cardLarge,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Palette.primaryBorder,
-    borderLeftWidth: 4,
-    borderLeftColor: Palette.primary,
-    marginBottom: 20,
-    ...Shadows.card,
-  },
-  collegeHeroTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  collegeIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Palette.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  collegeTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
-  },
-  collegePill: {
-    backgroundColor: Palette.primaryLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  collegePillText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: Palette.primary,
-    letterSpacing: 0.6,
-  },
-  notifPill: {
-    backgroundColor: Palette.dangerLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  notifPillText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: Palette.danger,
-  },
-  collegeTitle: {
-    fontSize: 15.5,
-    fontWeight: '800',
-    color: Palette.textTitle,
-  },
-  collegeSub: {
-    fontSize: 12,
-    color: Palette.primary,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  collegeHeroFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: Palette.borderSubtle,
-  },
-  collegeActionText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Palette.textTitle,
+    color: '#38BDF8',
   },
 });

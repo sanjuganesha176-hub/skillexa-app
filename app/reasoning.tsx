@@ -83,6 +83,7 @@ export default function ReasoningPage() {
                     params: {
                       subject: 'Logical Reasoning',
                       topic: topic.title,
+                      topicId: topic.id,
                     },
                   })
                 }

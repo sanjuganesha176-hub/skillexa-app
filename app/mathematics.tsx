@@ -83,6 +83,7 @@ export default function MathematicsPage() {
                     params: {
                       subject: 'Mathematics',
                       topic: topic.title,
+                      topicId: topic.id,
                     },
                   })
                 }

@@ -8,15 +8,15 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Palette, Radii } from '../../constants/theme';
 import { NotificationBellButton } from '../CollegeNotificationsModal';
 import { useAuth } from '../auth-context';
-import { BackendStatusBadge } from './BackendStatusBadge';
+import { useTheme } from '../theme-context';
 
 interface AppHeaderProps {
   title?: string;
   subtitle?: string;
   showBack?: boolean;
+  backLabel?: string;
   onBack?: () => void;
   rightAction?: React.ReactNode;
 }
@@ -25,11 +25,13 @@ export function AppHeader({
   title,
   subtitle,
   showBack = false,
+  backLabel,
   onBack,
   rightAction,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const initial = (profile?.name || 'User').charAt(0).toUpperCase();
 
   const handleBack = () => {
@@ -41,7 +43,13 @@ export function AppHeader({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+    <View
+      style={[
+        styles.container,
+        isDark && styles.containerDark,
+        { paddingTop: Math.max(insets.top, 12) + 6 },
+      ]}
+    >
       <View style={styles.contentRow}>
         {showBack ? (
           <TouchableOpacity
@@ -49,16 +57,22 @@ export function AppHeader({
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Feather name="arrow-left" size={20} color={Palette.textTitle} />
-            <Text style={styles.backLabel}>Back</Text>
+            <Feather
+              name="arrow-left"
+              size={18}
+              color={isDark ? "#F8FAFC" : "#0f172a"}
+            />
+            <Text style={[styles.backLabel, isDark && styles.textDark]}>
+              {backLabel || 'Back'}
+            </Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.brandRow}>
             <View style={styles.brandIconBox}>
-              <Feather name="book-open" size={16} color="#FFFFFF" />
+              <Feather name="file-text" size={17} color="#FFFFFF" />
             </View>
-            <Text style={styles.brandTitle}>
-              Skill<Text style={styles.brandHighlight}>Exa</Text>
+            <Text style={[styles.brandTitle, isDark && styles.textDark]}>
+              Skill<Text style={{ color: '#0066FF' }}>Exa</Text>
             </Text>
           </View>
         )}
@@ -66,31 +80,69 @@ export function AppHeader({
         {/* Center Title when in inner page */}
         {showBack && title && (
           <View style={styles.centerTitleWrapper}>
-            <Text style={styles.centerTitle} numberOfLines={1}>
+            <Text
+              style={[styles.centerTitle, isDark && styles.textDark]}
+              numberOfLines={1}
+            >
               {title}
             </Text>
             {subtitle && (
-              <Text style={styles.centerSubtitle} numberOfLines={1}>
+              <Text
+                style={[styles.centerSubtitle, isDark && styles.subtitleDark]}
+                numberOfLines={1}
+              >
                 {subtitle}
               </Text>
             )}
           </View>
         )}
 
-        {/* Right side Profile / Custom action */}
+        {/* Right side Actions */}
         <View style={styles.rightGroup}>
           {rightAction ? (
             rightAction
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-              <BackendStatusBadge compact />
-              <NotificationBellButton />
+            <View style={styles.actionItemsRow}>
+              {/* Dark / Light Theme Toggle */}
               <TouchableOpacity
-                style={styles.avatarButton}
+                style={[styles.iconButton, isDark && styles.iconButtonDark]}
+                onPress={toggleTheme}
+                activeOpacity={0.7}
+                accessibilityLabel="Toggle Theme"
+              >
+                <Feather
+                  name={isDark ? "sun" : "moon"}
+                  size={17}
+                  color={isDark ? "#F59E0B" : "#0F172A"}
+                />
+              </TouchableOpacity>
+
+              {/* Settings Button */}
+              <TouchableOpacity
+                style={[styles.iconButton, isDark && styles.iconButtonDark]}
+                onPress={() => router.push('/settings' as any)}
+                activeOpacity={0.7}
+                accessibilityLabel="Settings"
+              >
+                <Feather
+                  name="settings"
+                  size={17}
+                  color={isDark ? "#94A3B8" : "#0F172A"}
+                />
+              </TouchableOpacity>
+
+              {/* Notification Bell */}
+              <NotificationBellButton />
+
+              {/* Avatar Circle */}
+              <TouchableOpacity
+                style={[styles.avatarButton, isDark && styles.avatarButtonDark]}
                 onPress={() => router.push('/profile' as any)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.avatarText}>{initial}</Text>
+                <Text style={[styles.avatarText, isDark && styles.avatarTextDark]}>
+                  {initial}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -104,16 +156,23 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Palette.border,
-    paddingHorizontal: 16,
+    borderBottomColor: '#f1f5f9',
+    paddingHorizontal: 20,
     paddingBottom: 12,
     zIndex: 50,
+  },
+  containerDark: {
+    backgroundColor: '#070B14',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 38,
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
   brandRow: {
     flexDirection: 'row',
@@ -121,21 +180,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   brandIconBox: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    backgroundColor: Palette.primary,
+    backgroundColor: '#0066FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
-    color: Palette.textTitle,
-    letterSpacing: -0.4,
+    color: '#0f172a',
+    letterSpacing: -0.3,
   },
-  brandHighlight: {
-    color: Palette.primary,
+  textDark: {
+    color: '#F8FAFC',
+  },
+  subtitleDark: {
+    color: '#94A3B8',
   },
   backButton: {
     flexDirection: 'row',
@@ -147,7 +209,7 @@ const styles = StyleSheet.create({
   backLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: Palette.textTitle,
+    color: '#0f172a',
   },
   centerTitleWrapper: {
     flex: 1,
@@ -157,30 +219,53 @@ const styles = StyleSheet.create({
   centerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Palette.textTitle,
+    color: '#0f172a',
   },
   centerSubtitle: {
     fontSize: 11,
-    color: Palette.textSecondary,
+    color: '#64748b',
     marginTop: 1,
   },
   rightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarButton: {
+  actionItemsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
     width: 34,
     height: 34,
-    borderRadius: Radii.pill,
-    backgroundColor: Palette.primaryLight,
-    borderWidth: 1.5,
-    borderColor: Palette.primaryBorder,
+    borderRadius: 17,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconButtonDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  avatarButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarButtonDark: {
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
   avatarText: {
     fontSize: 14,
-    fontWeight: '800',
-    color: Palette.primary,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  avatarTextDark: {
+    color: '#F8FAFC',
   },
 });

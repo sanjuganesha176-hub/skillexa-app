@@ -70,6 +70,34 @@ export const defaultFacultyProfile: UserProfile = {
 
 const defaultProfile: UserProfile = defaultStudentProfile;
 
+const AUTH_STATUS_STORAGE_KEY = 'skillexa_auth_status';
+const USER_PROFILE_STORAGE_KEY = 'skillexa_user_profile';
+
+const getStoredAuthStatus = (): boolean => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const stored = window.localStorage.getItem(AUTH_STATUS_STORAGE_KEY);
+      if (stored === 'false') return false;
+      if (stored === 'true') return true;
+    } catch {
+      // fallback
+    }
+  }
+  return true;
+};
+
+const getStoredProfile = (): UserProfile => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const stored = window.localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch {
+      // fallback
+    }
+  }
+  return defaultStudentProfile;
+};
+
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: true,
   profile: defaultProfile,
@@ -80,17 +108,33 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [profile, setProfile] = useState<UserProfile>(defaultStudentProfile);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(getStoredAuthStatus);
+  const [profile, setProfile] = useState<UserProfile>(getStoredProfile);
 
   const login = React.useCallback((nextProfile: UserProfile) => {
     setProfile(nextProfile);
     setIsAuthenticated(true);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(AUTH_STATUS_STORAGE_KEY, 'true');
+        window.localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(nextProfile));
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   const logout = React.useCallback(() => {
     setProfile(defaultStudentProfile);
     setIsAuthenticated(false);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(AUTH_STATUS_STORAGE_KEY, 'false');
+        window.localStorage.removeItem(USER_PROFILE_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   const updateProfile = React.useCallback((updates: Partial<UserProfile>) => {

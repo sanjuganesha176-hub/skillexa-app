@@ -1,6 +1,6 @@
-import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React from 'react';
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -9,187 +9,214 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { AppHeader } from '../components/common/AppHeader';
-import { ProgressBar } from '../components/common/EducationalCards';
-import { Palette, Radii, Shadows } from '../constants/theme';
+} from "react-native";
+import { AppHeader } from "../components/common/AppHeader";
+import { useTheme } from "../components/theme-context";
 
 export default function EngineeringDashboard() {
+  const { isDark } = useTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppHeader showBack title="Engineering Learning" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#070B14" : "#FFFFFF"}
+      />
+      <AppHeader
+        showBack
+        title="Engineering Learning"
+        backLabel="Back to Paths"
+        onBack={() => router.push("/pathselection" as any)}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header Title */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Engineering Learning</Text>
-          <Text style={styles.subtitle}>Build skills. Prepare for your career.</Text>
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          {/* Header Section */}
+          <View style={styles.header}>
+            <Text style={[styles.title, isDark && styles.titleDark]}>
+              Your Learning Modules
+            </Text>
+            <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
+              Structured career and technical curriculum
+            </Text>
+          </View>
 
-        {/* Overall Progress Banner */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeaderRow}>
-            <View>
-              <Text style={styles.progressLabel}>OVERALL ENGINEERING PROGRESS</Text>
-              <Text style={styles.progressValue}>68% Complete</Text>
-            </View>
-            <View style={styles.progressPercentBadge}>
-              <Text style={styles.progressPercentText}>68%</Text>
-            </View>
-          </View>
-          <View style={styles.progressBarWrapper}>
-            <ProgressBar progress={0.68} color={Palette.primary} />
-          </View>
-          <Text style={styles.progressMeta}>3 of 5 core modules in progress</Text>
-        </View>
-
-        {/* Section Heading */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Learning Modules</Text>
-          <Text style={styles.sectionSubtitle}>Structured career and technical curriculum</Text>
-        </View>
-
-        {/* Module 1: Coding Problems */}
-        <View style={styles.moduleCard}>
-          <View style={styles.moduleTopRow}>
-            <View style={[styles.moduleIconCircle, { backgroundColor: Palette.primaryLight }]}>
-              <Feather name="terminal" size={22} color={Palette.primary} />
-            </View>
-            <View style={styles.moduleInfo}>
-              <Text style={styles.moduleTitle}>Coding Problems</Text>
-              <Text style={styles.moduleDesc}>Practice real programming problems.</Text>
-            </View>
-          </View>
-          <View style={styles.moduleStatsRow}>
-            <Text style={styles.statLabel}>Solved: <Text style={styles.statValue}>42 / 100</Text></Text>
-            <Text style={styles.statLabel}>Progress: <Text style={styles.statValue}>42%</Text></Text>
-          </View>
-          <View style={styles.moduleProgressTrack}>
-            <ProgressBar progress={0.42} color={Palette.primary} />
-          </View>
-          <TouchableOpacity
-            style={styles.moduleBtn}
-            onPress={() => router.push('/coding-problems' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.moduleBtnText}>Practice Coding</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Module 2: DSA Practice */}
-        <View style={styles.moduleCard}>
-          <View style={styles.moduleTopRow}>
-            <View style={[styles.moduleIconCircle, { backgroundColor: Palette.successLight }]}>
-              <Feather name="code" size={22} color={Palette.success} />
-            </View>
-            <View style={styles.moduleInfo}>
-              <Text style={styles.moduleTitle}>DSA Practice</Text>
-              <Text style={styles.moduleDesc}>Master data structures and algorithms step by step.</Text>
-            </View>
-          </View>
-          <View style={styles.moduleStatsRow}>
-            <Text style={styles.statLabel}>Topics: <Text style={styles.statValue}>12 / 20 Topics</Text></Text>
-            <Text style={styles.statLabel}>Progress: <Text style={styles.statValue}>60%</Text></Text>
-          </View>
-          <View style={styles.moduleProgressTrack}>
-            <ProgressBar progress={0.60} color={Palette.success} />
-          </View>
-          <TouchableOpacity
-            style={[styles.moduleBtn, { backgroundColor: Palette.success }]}
-            onPress={() => router.push('/dsa-practice' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.moduleBtnText}>Continue DSA Roadmap</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Module 3: Resume Builder */}
-        <View style={styles.moduleCard}>
-          <View style={styles.moduleTopRow}>
-            <View style={[styles.moduleIconCircle, { backgroundColor: Palette.warningLight }]}>
-              <Feather name="file-text" size={22} color={Palette.warning} />
-            </View>
-            <View style={styles.moduleInfo}>
-              <Text style={styles.moduleTitle}>Resume Builder</Text>
-              <Text style={styles.moduleDesc}>Create your ATS-ready professional resume.</Text>
-            </View>
-          </View>
-          <View style={styles.moduleStatsRow}>
-            <Text style={styles.statLabel}>Profile Completion: <Text style={styles.statValue}>85%</Text></Text>
-            <Text style={styles.statLabel}>Templates: <Text style={styles.statValue}>3 Standard</Text></Text>
-          </View>
-          <View style={styles.moduleProgressTrack}>
-            <ProgressBar progress={0.85} color={Palette.warning} />
-          </View>
-          <TouchableOpacity
-            style={[styles.moduleBtn, { backgroundColor: Palette.primary }]}
-            onPress={() => router.push('/resume-builder' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.moduleBtnText}>Build Resume</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Module 4: AI Mock Interview (Purple AI Theme) */}
-        <View style={[styles.moduleCard, styles.aiCard]}>
-          <View style={styles.moduleTopRow}>
-            <View style={[styles.moduleIconCircle, { backgroundColor: Palette.aiPurpleLight }]}>
-              <Feather name="message-square" size={22} color={Palette.aiPurple} />
-            </View>
-            <View style={styles.moduleInfo}>
-              <View style={styles.aiBadgeRow}>
-                <Text style={styles.moduleTitle}>AI Mock Interview</Text>
-                <View style={styles.aiPill}>
-                  <Text style={styles.aiPillText}>AI POWERED</Text>
-                </View>
+          {/* Module 1: Coding Problems */}
+          <View style={[styles.moduleCard, isDark && styles.moduleCardDark]}>
+            <View style={styles.cardTopRow}>
+              <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+                <Feather
+                  name="terminal"
+                  size={20}
+                  color={isDark ? "#38BDF8" : "#334155"}
+                />
               </View>
-              <Text style={styles.moduleDesc}>Practice technical and HR interviews with instant AI evaluation.</Text>
+              <View style={styles.textGroup}>
+                <Text style={[styles.moduleTitle, isDark && styles.moduleTitleDark]}>
+                  Coding Problems
+                </Text>
+                <Text style={[styles.moduleDesc, isDark && styles.moduleDescDark]}>
+                  Practice real programming problems.
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.moduleStatsRow}>
-            <Text style={styles.statLabel}>Completed: <Text style={styles.statValue}>3 Interviews</Text></Text>
-            <Text style={styles.statLabel}>Average Score: <Text style={styles.statValue}>82 / 100</Text></Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.moduleBtn, { backgroundColor: Palette.aiPurple }]}
-            onPress={() => router.push('/mock-interviews' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.moduleBtnText}>Start AI Interview</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Module 5: Placement Preparation */}
-        <View style={styles.moduleCard}>
-          <View style={styles.moduleTopRow}>
-            <View style={[styles.moduleIconCircle, { backgroundColor: Palette.primaryLight }]}>
-              <Feather name="briefcase" size={22} color={Palette.primary} />
+            <TouchableOpacity
+              style={[styles.actionBtn, isDark && styles.actionBtnDark]}
+              onPress={() => router.push("/coding-problems" as any)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.actionBtnText}>Practice Coding →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Module 2: DSA Practice */}
+          <View style={[styles.moduleCard, isDark && styles.moduleCardDark]}>
+            <View style={styles.cardTopRow}>
+              <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+                <Feather
+                  name="code"
+                  size={20}
+                  color={isDark ? "#38BDF8" : "#334155"}
+                />
+              </View>
+              <View style={styles.textGroup}>
+                <Text style={[styles.moduleTitle, isDark && styles.moduleTitleDark]}>
+                  DSA Practice
+                </Text>
+                <Text style={[styles.moduleDesc, isDark && styles.moduleDescDark]}>
+                  Master data structures and algorithms step by step.
+                </Text>
+              </View>
             </View>
-            <View style={styles.moduleInfo}>
-              <Text style={styles.moduleTitle}>Placement Preparation</Text>
-              <Text style={styles.moduleDesc}>Prepare for aptitude, technical MCQs and HR rounds.</Text>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, isDark && styles.actionBtnDark]}
+              onPress={() => router.push("/dsa-practice" as any)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.actionBtnText}>Continue DSA Roadmap →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Module 3: Resume Builder */}
+          <View style={[styles.moduleCard, isDark && styles.moduleCardDark]}>
+            <View style={styles.cardTopRow}>
+              <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+                <Feather
+                  name="file-text"
+                  size={20}
+                  color={isDark ? "#38BDF8" : "#334155"}
+                />
+              </View>
+              <View style={styles.textGroup}>
+                <Text style={[styles.moduleTitle, isDark && styles.moduleTitleDark]}>
+                  Resume Builder
+                </Text>
+                <Text style={[styles.moduleDesc, isDark && styles.moduleDescDark]}>
+                  Create your ATS-ready professional resume.
+                </Text>
+              </View>
             </View>
+
+            <View style={styles.metaRow}>
+              <Text style={[styles.metaText, isDark && styles.metaTextDark]}>
+                Templates:{" "}
+                <Text style={[styles.metaBold, isDark && styles.metaBoldDark]}>
+                  3 Standard
+                </Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, isDark && styles.actionBtnDark]}
+              onPress={() => router.push("/resume-builder" as any)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.actionBtnText}>Build Resume →</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.moduleStatsRow}>
-            <Text style={styles.statLabel}>Overall Readiness: <Text style={styles.statValue}>54%</Text></Text>
-            <Text style={styles.statLabel}>Company Profiles: <Text style={styles.statValue}>24 FAANG/MNC</Text></Text>
+
+          {/* Module 4: AI Mock Interview */}
+          <View style={[styles.moduleCard, isDark && styles.moduleCardDark]}>
+            <View style={styles.cardTopRow}>
+              <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+                <Feather
+                  name="message-square"
+                  size={20}
+                  color={isDark ? "#C084FC" : "#334155"}
+                />
+              </View>
+              <View style={styles.textGroup}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.moduleTitle, isDark && styles.moduleTitleDark]}>
+                    AI Mock Interview
+                  </Text>
+                  <View style={styles.aiBadge}>
+                    <Text style={styles.aiBadgeText}>AI POWERED</Text>
+                  </View>
+                </View>
+                <Text style={[styles.moduleDesc, isDark && styles.moduleDescDark]}>
+                  Practice technical and HR interviews with instant AI evaluation.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.metaRow}>
+              <Text style={[styles.metaText, isDark && styles.metaTextDark]}>
+                Average Score: -
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, isDark && styles.actionBtnDark]}
+              onPress={() => router.push("/mock-interviews" as any)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.actionBtnText}>Start AI Interview →</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.moduleProgressTrack}>
-            <ProgressBar progress={0.54} color={Palette.primary} />
+
+          {/* Module 5: Placement Preparation */}
+          <View style={[styles.moduleCard, isDark && styles.moduleCardDark]}>
+            <View style={styles.cardTopRow}>
+              <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+                <Feather
+                  name="briefcase"
+                  size={20}
+                  color={isDark ? "#38BDF8" : "#334155"}
+                />
+              </View>
+              <View style={styles.textGroup}>
+                <Text style={[styles.moduleTitle, isDark && styles.moduleTitleDark]}>
+                  Placement Preparation
+                </Text>
+                <Text style={[styles.moduleDesc, isDark && styles.moduleDescDark]}>
+                  Prepare for aptitude, technical MCQs and HR rounds.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.metaRow}>
+              <Text style={[styles.metaText, isDark && styles.metaTextDark]}>
+                Company Profiles:{" "}
+                <Text style={[styles.metaBold, isDark && styles.metaBoldDark]}>
+                  12
+                </Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.actionBtn, isDark && styles.actionBtnDark]}
+              onPress={() => router.push("/placement-preparation" as any)}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.actionBtnText}>Prepare for Placement →</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.moduleBtn, { backgroundColor: Palette.primary }]}
-            onPress={() => router.push('/placement-preparation' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.moduleBtnText}>Prepare for Placement</Text>
-            <Feather name="arrow-right" size={14} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -199,173 +226,183 @@ export default function EngineeringDashboard() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Palette.background,
+    backgroundColor: "#FFFFFF",
+  },
+  safeAreaDark: {
+    backgroundColor: "#070B14",
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 48,
+  },
+  container: {
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
   },
   header: {
     marginBottom: 20,
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
-    color: Palette.textTitle,
+    fontWeight: "800",
+    color: "#0f172a",
+    letterSpacing: -0.4,
     marginBottom: 4,
   },
+  titleDark: {
+    color: "#F8FAFC",
+  },
   subtitle: {
-    fontSize: 14,
-    color: Palette.textSecondary,
+    fontSize: 13.5,
+    color: "#64748b",
+    fontWeight: "400",
+    marginBottom: 16,
   },
-  progressCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 18,
+  subtitleDark: {
+    color: "#94A3B8",
+  },
+  crossTrackBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FEF3C7",
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Palette.border,
-    marginBottom: 24,
-    ...Shadows.card,
+    borderColor: "rgba(217, 119, 6, 0.2)",
+    marginBottom: 20,
   },
-  progressHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  crossTrackLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
   },
-  progressLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Palette.primary,
-    letterSpacing: 0.8,
+  crossTrackTitle: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#D97706",
   },
-  progressValue: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Palette.textTitle,
-    marginTop: 2,
-  },
-  progressPercentBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Palette.primaryLight,
-    borderWidth: 2,
-    borderColor: Palette.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressPercentText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Palette.primary,
-  },
-  progressBarWrapper: {
-    marginBottom: 8,
-  },
-  progressMeta: {
-    fontSize: 12,
-    color: Palette.textSecondary,
-  },
-  sectionHeader: {
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Palette.textTitle,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: Palette.textSecondary,
-    marginTop: 2,
+  crossTrackSub: {
+    fontSize: 11.5,
+    color: "#78350F",
+    marginTop: 1,
   },
   moduleCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 20,
     borderWidth: 1,
-    borderColor: Palette.border,
+    borderColor: "#eef2f6",
     marginBottom: 16,
-    ...Shadows.card,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  aiCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: Palette.aiPurple,
+  moduleCardDark: {
+    backgroundColor: "#0F172A",
+    borderColor: "#1E293B",
   },
-  moduleTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
-  moduleIconCircle: {
+  iconBox: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
   },
-  moduleInfo: {
+  iconBoxDark: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  textGroup: {
     flex: 1,
+    paddingTop: 2,
   },
-  aiBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
-  aiPill: {
-    backgroundColor: Palette.aiPurpleLight,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  moduleTitle: {
+    fontSize: 16.5,
+    fontWeight: "800",
+    color: "#0f172a",
+  },
+  moduleTitleDark: {
+    color: "#F8FAFC",
+  },
+  aiBadge: {
+    backgroundColor: "#EDE9FE",
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
     borderRadius: 6,
   },
-  aiPillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: Palette.aiPurple,
-    letterSpacing: 0.5,
-  },
-  moduleTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Palette.textTitle,
+  aiBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#4338CA",
+    letterSpacing: 0.4,
   },
   moduleDesc: {
     fontSize: 13,
-    color: Palette.textBody,
-    marginTop: 3,
+    color: "#64748b",
+    marginTop: 4,
     lineHeight: 18,
   },
-  moduleStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  moduleDescDark: {
+    color: "#94A3B8",
   },
-  statLabel: {
-    fontSize: 12,
-    color: Palette.textSecondary,
+  metaRow: {
+    alignItems: "flex-end",
+    marginTop: 8,
+    marginBottom: 2,
   },
-  statValue: {
-    fontWeight: '700',
-    color: Palette.textTitle,
+  metaText: {
+    fontSize: 12.5,
+    color: "#64748b",
+    fontWeight: "500",
   },
-  moduleProgressTrack: {
-    marginBottom: 14,
+  metaTextDark: {
+    color: "#94A3B8",
   },
-  moduleBtn: {
-    backgroundColor: Palette.primary,
-    borderRadius: Radii.button,
-    paddingVertical: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+  metaBold: {
+    fontWeight: "700",
+    color: "#0f172a",
   },
-  moduleBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '700',
+  metaBoldDark: {
+    color: "#F8FAFC",
+  },
+  actionBtn: {
+    height: 46,
+    backgroundColor: "#0A192F",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    shadowColor: "#0A192F",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  actionBtnDark: {
+    backgroundColor: "#1E293B",
+    borderColor: "#334155",
+    borderWidth: 1,
+  },
+  actionBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14.5,
+    fontWeight: "700",
   },
 });

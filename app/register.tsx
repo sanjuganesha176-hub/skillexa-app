@@ -1,123 +1,166 @@
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Platform,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { GlassCard } from "../components/ui/GlassCard";
-import { Gradients, Palette } from "../constants/theme";
 
 export default function Register() {
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<"STUDENT" | "FACULTY">("STUDENT");
+
+  const handleContinue = () => {
+    if (selectedRole === "STUDENT") {
+      router.push("/register-user" as any);
+    } else {
+      router.push("/register-lecturer" as any);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#070B14" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-      {/* Ambient background glows */}
-      <View style={styles.ambientContainer} pointerEvents="none">
-        <View style={styles.glowOrbTop} />
-        <View style={styles.glowOrbBottom} />
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.responsiveWrapper}>
+          {/* Top Bar with circular Back button and Step pill */}
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.circularBackButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Feather name="arrow-left" size={20} color="#0f172a" />
+            </TouchableOpacity>
 
-      <View style={styles.container}>
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-        >
-          <Feather name="arrow-left" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+            <View style={styles.stepPill}>
+              <View style={styles.stepDot} />
+              <Text style={styles.stepText}>Step 1 of 3</Text>
+            </View>
+          </View>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.badge}>ONBOARDING</Text>
-          <Text style={styles.title}>Select Your Role</Text>
-          <Text style={styles.subtitle}>
-            Choose your learning or teaching profile to configure your personalized dashboard
-          </Text>
+          {/* Header Section */}
+          <View style={styles.header}>
+            <Text style={styles.badge}>ONBOARDING</Text>
+            <Text style={styles.title}>Select Your Role</Text>
+            <Text style={styles.subtitle}>
+              Choose your learning or teaching profile to configure your personalized dashboard
+            </Text>
+          </View>
+
+          {/* Option 1: Student Card */}
+          <TouchableOpacity
+            style={[
+              styles.roleCard,
+              selectedRole === "STUDENT" && styles.roleCardActive,
+            ]}
+            onPress={() => setSelectedRole("STUDENT")}
+            activeOpacity={0.88}
+          >
+            <View style={styles.cardContent}>
+              <View style={styles.studentIconBox}>
+                <Feather name="user" size={22} color="#0066FF" />
+              </View>
+
+              <View style={styles.cardTexts}>
+                <View style={styles.roleTitleRow}>
+                  <Text style={styles.roleTitle}>Student</Text>
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularBadgeText}>POPULAR</Text>
+                  </View>
+                </View>
+                <Text style={styles.roleDesc}>
+                  Access engineering roadmaps, coding compiler, unit quizzes, and competitive exams.
+                </Text>
+              </View>
+
+              <View style={styles.rightActions}>
+                {selectedRole === "STUDENT" ? (
+                  <View style={styles.checkedCircle}>
+                    <Feather name="check" size={13} color="#FFFFFF" />
+                  </View>
+                ) : (
+                  <View style={styles.uncheckedCircle} />
+                )}
+                <Feather name="chevron-right" size={18} color="#94a3b8" />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* Option 2: Faculty / Teacher Card */}
+          <TouchableOpacity
+            style={[
+              styles.roleCard,
+              selectedRole === "FACULTY" && styles.roleCardActive,
+            ]}
+            onPress={() => setSelectedRole("FACULTY")}
+            activeOpacity={0.88}
+          >
+            <View style={styles.cardContent}>
+              <View style={styles.facultyIconBox}>
+                <Feather name="file-text" size={20} color="#9333EA" />
+              </View>
+
+              <View style={styles.cardTexts}>
+                <View style={styles.roleTitleRow}>
+                  <Text style={styles.roleTitle}>Faculty / Teacher</Text>
+                  <View style={styles.facultyBadge}>
+                    <Text style={styles.facultyBadgeText}>FACULTY</Text>
+                  </View>
+                </View>
+                <Text style={styles.roleDesc}>
+                  Publish curriculum content, manage lab files, design quizzes, and monitor students.
+                </Text>
+              </View>
+
+              <View style={styles.rightActions}>
+                {selectedRole === "FACULTY" ? (
+                  <View style={styles.checkedCircle}>
+                    <Feather name="check" size={13} color="#FFFFFF" />
+                  </View>
+                ) : (
+                  <View style={styles.uncheckedCircle} />
+                )}
+                <Feather name="chevron-right" size={18} color="#94a3b8" />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* Primary Action Button */}
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleContinue}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.continueButtonText}>
+              {selectedRole === "STUDENT"
+                ? "Continue as Student →"
+                : "Continue as Faculty →"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Existing account footer */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.replace("/login")}
+            >
+              <Text style={styles.footerHighlight}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Option 1: Student / User */}
-        <GlassCard
-          style={styles.roleCard}
-          borderColor={Palette.glassBorderCyan}
-          onPress={() => router.push("/register-user")}
-          glow
-        >
-          <View style={styles.cardContent}>
-            <LinearGradient
-              colors={Gradients.cyanBlue}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconCircle}
-            >
-              <Feather name="user" size={28} color="#FFFFFF" />
-            </LinearGradient>
-            <View style={styles.cardTexts}>
-              <View style={styles.roleRow}>
-                <Text style={styles.roleTitle}>Student / Scholar</Text>
-                <View style={styles.tagPill}>
-                  <Text style={styles.tagText}>POPULAR</Text>
-                </View>
-              </View>
-              <Text style={styles.roleDesc}>
-                Access engineering roadmaps, coding compiler, unit quizzes, and competitive exams.
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={22} color={Palette.cyan} />
-          </View>
-        </GlassCard>
-
-        {/* Option 2: Lecturer / Educator */}
-        <GlassCard
-          style={styles.roleCard}
-          borderColor={Palette.glassBorderPrimary}
-          onPress={() => router.push("/register-lecturer")}
-          glow
-        >
-          <View style={styles.cardContent}>
-            <LinearGradient
-              colors={Gradients.purpleIndigo}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconCircle}
-            >
-              <Feather name="book-open" size={28} color="#FFFFFF" />
-            </LinearGradient>
-            <View style={styles.cardTexts}>
-              <View style={styles.roleRow}>
-                <Text style={styles.roleTitle}>Educator / Lecturer</Text>
-                <View style={[styles.tagPill, { backgroundColor: "rgba(139, 92, 246, 0.2)" }]}>
-                  <Text style={[styles.tagText, { color: Palette.purpleLight }]}>FACULTY</Text>
-                </View>
-              </View>
-              <Text style={styles.roleDesc}>
-                Publish curriculum content, manage lab files, design quizzes, and monitor students.
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={22} color={Palette.purpleLight} />
-          </View>
-        </GlassCard>
-
-        {/* Existing account footer */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.replace("/login")}
-          style={styles.loginRedirect}
-        >
-          <Text style={styles.loginRedirectText}>
-            Already have an account? <Text style={styles.loginHighlight}>Sign In</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -125,131 +168,226 @@ export default function Register() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Palette.bgDark,
+    backgroundColor: "#f8fafc",
   },
-  ambientContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: "hidden",
-  },
-  glowOrbTop: {
-    position: "absolute",
-    top: -50,
-    right: -40,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: "rgba(99, 102, 241, 0.16)",
-  },
-  glowOrbBottom: {
-    position: "absolute",
-    bottom: -60,
-    left: -40,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: "rgba(6, 182, 212, 0.14)",
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 22,
-    paddingTop: 16,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "android" ? 14 : 8,
+    paddingBottom: 32,
     justifyContent: "center",
   },
-  backButton: {
-    position: "absolute",
-    top: 16,
-    left: 22,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    borderColor: Palette.glassBorder,
+  responsiveWrapper: {
+    width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 28,
+  },
+  circularBackButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
+    borderWidth: 1,
+    borderColor: "#eef2f6",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  stepPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  stepDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#0066FF",
+  },
+  stepText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#0066FF",
   },
   header: {
-    marginBottom: 32,
-    marginTop: 30,
+    marginBottom: 24,
   },
   badge: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
-    color: Palette.cyan,
-    letterSpacing: 1.5,
+    color: "#0066FF",
+    letterSpacing: 0.8,
     marginBottom: 8,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0f172a",
+    letterSpacing: -0.5,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: Palette.textSecondaryDark,
-    lineHeight: 20,
+    color: "#64748b",
+    lineHeight: 21,
+    fontWeight: "400",
   },
   roleCard: {
-    marginBottom: 20,
-    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "#eef2f6",
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  roleCardActive: {
+    borderColor: "#0066FF",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0066FF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
   },
-  iconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  studentIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: 14,
+  },
+  facultyIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#FAF5FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
   },
   cardTexts: {
     flex: 1,
-    marginRight: 10,
+    paddingRight: 8,
   },
-  roleRow: {
+  roleTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginBottom: 4,
   },
   roleTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
   },
-  tagPill: {
-    backgroundColor: "rgba(6, 182, 212, 0.2)",
-    paddingVertical: 2,
+  popularBadge: {
+    backgroundColor: "#E0F2FE",
     paddingHorizontal: 8,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  tagText: {
-    fontSize: 10,
+  popularBadgeText: {
+    fontSize: 10.5,
     fontWeight: "800",
-    color: Palette.cyanLight,
-    letterSpacing: 0.5,
+    color: "#0284C7",
+    letterSpacing: 0.4,
+  },
+  facultyBadge: {
+    backgroundColor: "#FAF5FF",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  facultyBadgeText: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    color: "#9333EA",
+    letterSpacing: 0.4,
   },
   roleDesc: {
-    fontSize: 12,
-    color: Palette.textSecondaryDark,
-    lineHeight: 17,
+    fontSize: 12.5,
+    color: "#64748b",
+    lineHeight: 18,
   },
-  loginRedirect: {
-    marginTop: 20,
+  rightActions: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    gap: 8,
   },
-  loginRedirectText: {
-    color: Palette.textSecondaryDark,
-    fontSize: 14,
+  checkedCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#0066FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  loginHighlight: {
-    color: Palette.cyanLight,
+  uncheckedCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: "#cbd5e1",
+    backgroundColor: "transparent",
+  },
+  continueButton: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "#0066FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    marginBottom: 20,
+    shadowColor: "#0066FF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  continueButtonText: {
+    fontSize: 15.5,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 13.5,
+    color: "#64748b",
+  },
+  footerHighlight: {
+    fontSize: 13.5,
+    color: "#0066FF",
     fontWeight: "700",
   },
 });

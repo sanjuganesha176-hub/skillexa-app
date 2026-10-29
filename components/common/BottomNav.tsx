@@ -20,7 +20,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'home', route: '/home' },
-  { id: 'learn', label: 'Learn', icon: 'book-open', route: '/pathselection' },
+  { id: 'learn', label: 'Courses', icon: 'book-open', route: '/courses' },
   { id: 'practice', label: 'Practice', icon: 'check-circle', route: '/coding-problems' },
   { id: 'progress', label: 'Progress', icon: 'bar-chart-2', route: '/progress' },
   { id: 'profile', label: 'Profile', icon: 'user', route: '/profile' },
@@ -30,7 +30,6 @@ export function BottomNav() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
-  // Hidden on focused experiences
   const hiddenRoutes = [
     '/',
     '/splash',
@@ -49,8 +48,8 @@ export function BottomNav() {
   }
 
   const getActiveTab = () => {
-    if (pathname === '/home' || pathname === '/') return 'home';
-    if (pathname.includes('pathselection') || pathname.includes('engineering') || pathname.includes('competitive') || pathname.includes('english') || pathname.includes('mathematics') || pathname.includes('reasoning') || pathname.includes('awareness') || pathname.includes('science') || pathname.includes('fitness') || pathname.includes('topic-learning')) return 'learn';
+    if (pathname === '/home' || pathname === '/' || pathname.includes('pathselection') || pathname.includes('engineering') || pathname.includes('competitive')) return 'home';
+    if (pathname.includes('courses') || pathname.includes('english') || pathname.includes('mathematics') || pathname.includes('reasoning') || pathname.includes('awareness') || pathname.includes('science') || pathname.includes('fitness') || pathname.includes('topic-learning')) return 'learn';
     if (pathname.includes('coding-problems') || pathname.includes('dsa-practice') || pathname.includes('placement-preparation')) return 'practice';
     if (pathname.includes('progress') || pathname.includes('userdashboard') || pathname.includes('subjectdashboard')) return 'progress';
     if (pathname.includes('profile')) return 'profile';
@@ -74,7 +73,7 @@ export function BottomNav() {
               <Feather
                 name={item.icon}
                 size={20}
-                color={isActive ? Palette.primary : Palette.textMuted}
+                color={isActive ? '#38BDF8' : '#64748B'}
               />
               <Text
                 style={[
@@ -94,11 +93,11 @@ export function BottomNav() {
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#070B14',
     borderTopWidth: 1,
-    borderTopColor: Palette.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 8,
-    ...Shadows.floating,
+    ...Shadows.card,
   },
   container: {
     flexDirection: 'row',
@@ -115,11 +114,11 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: Palette.textMuted,
+    color: '#64748B',
     marginTop: 3,
   },
   tabLabelActive: {
-    color: Palette.primary,
-    fontWeight: '700',
+    color: '#38BDF8',
+    fontWeight: '800',
   },
 });

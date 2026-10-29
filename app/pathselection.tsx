@@ -8,153 +8,118 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { AppHeader } from "../components/common/AppHeader";
-import { Palette, Radii, Shadows } from "../constants/theme";
+import { useTheme } from "../components/theme-context";
 
 export default function PathSelection() {
+  const { isDark } = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 720;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#070B14" : "#FFFFFF"}
+      />
       <AppHeader />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Choose Your Learning Path</Text>
-          <Text style={styles.subtitle}>
-            What do you want to prepare for today?
-          </Text>
-        </View>
-
-        {/* 1. Engineering Learning Card */}
-        <View style={styles.pathCard}>
-          <View style={styles.cardTopRow}>
-            <View style={styles.iconCircle}>
-              <Feather name="cpu" size={26} color={Palette.primary} />
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>5 Learning Modules</Text>
-            </View>
+        <View style={styles.container}>
+          {/* Page Heading */}
+          <View style={styles.header}>
+            <Text style={[styles.title, isDark && styles.titleDark]}>
+              Choose Your Path
+            </Text>
+            <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
+              Select your main academic track
+            </Text>
           </View>
 
-          <Text style={styles.cardTitle}>Engineering Learning</Text>
-          <Text style={styles.cardDesc}>
-            Build technical skills, practice coding, and become placement ready.
-          </Text>
+          {/* Cards Row / Grid */}
+          <View style={[styles.cardsContainer, isWide && styles.cardsRow]}>
+            {/* 1. Engineering Learning Card */}
+            <TouchableOpacity
+              style={[
+                styles.pathCard,
+                isWide && styles.cardFlex,
+                isDark && styles.pathCardDark,
+              ]}
+              onPress={() => router.push("/engineering" as any)}
+              activeOpacity={0.92}
+            >
+              <View style={styles.cardTopRow}>
+                <View style={styles.leftTitleGroup}>
+                  <View
+                    style={[
+                      styles.engineeringIconBox,
+                      isDark && styles.engineeringIconBoxDark,
+                    ]}
+                  >
+                    <Feather name="cpu" size={22} color="#0066FF" />
+                  </View>
+                  <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                    Engineering Learning
+                  </Text>
+                </View>
+                <View style={styles.engineeringBadge}>
+                  <Text style={styles.engineeringBadgeText}>5 Modules</Text>
+                </View>
+              </View>
 
-          {/* Module Topics List */}
-          <View style={styles.topicsRow}>
-            <View style={styles.topicChip}>
-              <Feather name="terminal" size={13} color={Palette.primary} />
-              <Text style={styles.topicChipText}>Coding</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="code" size={13} color={Palette.primary} />
-              <Text style={styles.topicChipText}>DSA</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="file-text" size={13} color={Palette.primary} />
-              <Text style={styles.topicChipText}>Resume</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="message-square" size={13} color={Palette.primary} />
-              <Text style={styles.topicChipText}>Interview</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="briefcase" size={13} color={Palette.primary} />
-              <Text style={styles.topicChipText}>Placement</Text>
-            </View>
+              <Text style={[styles.cardDetails, isDark && styles.cardDetailsDark]}>
+                Coding • DSA • Resume • Interview • Placement Ready
+              </Text>
+
+              <View style={styles.actionRow}>
+                <Text style={styles.engineeringLink}>Explore Engineering →</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* 2. Competitive Exams Card */}
+            <TouchableOpacity
+              style={[
+                styles.pathCard,
+                isWide && styles.cardFlex,
+                isDark && styles.pathCardDark,
+              ]}
+              onPress={() => router.push("/competitive" as any)}
+              activeOpacity={0.92}
+            >
+              <View style={styles.cardTopRow}>
+                <View style={styles.leftTitleGroup}>
+                  <View
+                    style={[
+                      styles.competitiveIconBox,
+                      isDark && styles.competitiveIconBoxDark,
+                    ]}
+                  >
+                    <Feather name="award" size={22} color="#D97706" />
+                  </View>
+                  <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                    Competitive Exams
+                  </Text>
+                </View>
+                <View style={styles.competitiveBadge}>
+                  <Text style={styles.competitiveBadgeText}>6 Subjects</Text>
+                </View>
+              </View>
+
+              <Text style={[styles.cardDetails, isDark && styles.cardDetailsDark]}>
+                Aptitude • Reasoning • English • GK • Science • Fitness
+              </Text>
+
+              <View style={styles.actionRow}>
+                <Text style={styles.competitiveLink}>Explore Competitive →</Text>
+              </View>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.exploreBtn}
-            onPress={() => router.push("/engineering" as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.exploreBtnText}>Explore Engineering</Text>
-            <Feather name="arrow-right" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* 2. Competitive Exams Card */}
-        <View style={styles.pathCard}>
-          <View style={styles.cardTopRow}>
-            <View style={[styles.iconCircle, { backgroundColor: Palette.warningLight }]}>
-              <Feather name="award" size={26} color={Palette.warning} />
-            </View>
-            <View style={[styles.badge, { backgroundColor: Palette.warningLight }]}>
-              <Text style={[styles.badgeText, { color: Palette.warning }]}>6 Subjects • 5,000+ Questions</Text>
-            </View>
-          </View>
-
-          <Text style={styles.cardTitle}>Competitive Exams</Text>
-          <Text style={styles.cardDesc}>
-            Prepare for aptitude, reasoning, English and general awareness.
-          </Text>
-
-          {/* Module Topics List */}
-          <View style={styles.topicsRow}>
-            <View style={styles.topicChip}>
-              <Feather name="percent" size={13} color={Palette.warning} />
-              <Text style={styles.topicChipText}>Aptitude</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="activity" size={13} color={Palette.warning} />
-              <Text style={styles.topicChipText}>Reasoning</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="book-open" size={13} color={Palette.warning} />
-              <Text style={styles.topicChipText}>English</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="globe" size={13} color={Palette.warning} />
-              <Text style={styles.topicChipText}>GK</Text>
-            </View>
-            <View style={styles.topicChip}>
-              <Feather name="layers" size={13} color={Palette.warning} />
-              <Text style={styles.topicChipText}>Science</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.exploreBtn, { backgroundColor: Palette.primary }]}
-            onPress={() => router.push("/competitive" as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.exploreBtnText}>Explore Competitive</Text>
-            <Feather name="arrow-right" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* 3. Faculty & Educator Portal Card */}
-        <View style={styles.pathCard}>
-          <View style={styles.cardTopRow}>
-            <View style={[styles.iconCircle, { backgroundColor: Palette.aiPurpleLight }]}>
-              <Feather name="edit-3" size={24} color={Palette.aiPurple} />
-            </View>
-            <View style={[styles.badge, { backgroundColor: Palette.aiPurpleLight }]}>
-              <Text style={[styles.badgeText, { color: Palette.aiPurple }]}>Faculty & Educator Mode</Text>
-            </View>
-          </View>
-
-          <Text style={styles.cardTitle}>Faculty Assessment Portal</Text>
-          <Text style={styles.cardDesc}>
-            Create, edit, and publish topic-based 4-option MCQs directly to student quizzes.
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.exploreBtn, { backgroundColor: Palette.aiPurple }]}
-            onPress={() => router.push("/faculty" as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.exploreBtnText}>Open Faculty Portal</Text>
-            <Feather name="arrow-right" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -164,107 +129,159 @@ export default function PathSelection() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Palette.background,
+    backgroundColor: "#FFFFFF",
+  },
+  safeAreaDark: {
+    backgroundColor: "#070B14",
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 48,
+  },
+  container: {
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
   },
   header: {
-    marginBottom: 22,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "800",
-    color: Palette.textTitle,
-    marginBottom: 4,
+    color: "#0f172a",
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  titleDark: {
+    color: "#F8FAFC",
   },
   subtitle: {
-    fontSize: 14,
-    color: Palette.textSecondary,
+    fontSize: 14.5,
+    color: "#64748b",
+    fontWeight: "400",
+  },
+  subtitleDark: {
+    color: "#94A3B8",
+  },
+  cardsContainer: {
+    gap: 20,
+  },
+  cardsRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  cardFlex: {
+    flex: 1,
   },
   pathCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: Radii.cardLarge,
-    padding: 20,
+    borderRadius: 16,
+    padding: 22,
     borderWidth: 1,
-    borderColor: Palette.border,
-    marginBottom: 20,
-    ...Shadows.card,
+    borderColor: "#eef2f6",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    justifyContent: "space-between",
+  },
+  pathCardDark: {
+    backgroundColor: "#0F172A",
+    borderColor: "#1E293B",
   },
   cardTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 12,
   },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Palette.primaryLight,
+  leftTitleGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+    paddingRight: 8,
+  },
+  engineeringIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
   },
-  badge: {
-    backgroundColor: Palette.primaryLight,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+  engineeringIconBoxDark: {
+    backgroundColor: "rgba(0, 102, 255, 0.15)",
   },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Palette.primary,
+  competitiveIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#FEF3C7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  competitiveIconBoxDark: {
+    backgroundColor: "rgba(217, 119, 6, 0.15)",
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: Palette.textTitle,
-    marginBottom: 6,
+    color: "#0f172a",
+    flexShrink: 1,
   },
-  cardDesc: {
-    fontSize: 13.5,
-    color: Palette.textBody,
-    lineHeight: 20,
-    marginBottom: 16,
+  cardTitleDark: {
+    color: "#F8FAFC",
   },
-  topicsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 18,
-  },
-  topicChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: Palette.backgroundSecondary,
-    paddingVertical: 5,
+  engineeringBadge: {
+    backgroundColor: "#EFF6FF",
     paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Palette.border,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
-  topicChipText: {
+  engineeringBadgeText: {
     fontSize: 12,
-    color: Palette.textTitle,
-    fontWeight: "600",
+    fontWeight: "700",
+    color: "#0066FF",
   },
-  exploreBtn: {
-    backgroundColor: Palette.primary,
-    borderRadius: Radii.button,
-    paddingVertical: 13,
+  competitiveBadge: {
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  competitiveBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#D97706",
+  },
+  cardDetails: {
+    fontSize: 13,
+    color: "#334155",
+    fontWeight: "500",
+    marginTop: 10,
+    marginBottom: 16,
+    lineHeight: 19,
+  },
+  cardDetailsDark: {
+    color: "#94A3B8",
+  },
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    ...Shadows.button,
   },
-  exploreBtnText: {
-    color: "#FFFFFF",
+  engineeringLink: {
     fontSize: 14.5,
     fontWeight: "700",
+    color: "#0066FF",
+  },
+  competitiveLink: {
+    fontSize: 14.5,
+    fontWeight: "700",
+    color: "#D97706",
   },
 });

@@ -12,6 +12,7 @@ from backend.app.routers.coding import router as coding_router
 from backend.app.routers.interviews import router as interviews_router
 from backend.app.routers.notifications import router as notifications_router
 from backend.app.routers.progress import router as progress_router
+from backend.app.routers.competitive import router as competitive_router
 
 __all__ = [
     "auth_router",
@@ -28,4 +29,5 @@ __all__ = [
     "interviews_router",
     "notifications_router",
     "progress_router",
+    "competitive_router",
 ]

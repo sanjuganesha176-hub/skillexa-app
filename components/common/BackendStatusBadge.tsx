@@ -33,7 +33,7 @@ export function BackendStatusBadge({ compact = false }: { compact?: boolean }) {
           />
         )}
         <Text style={styles.compactText}>
-          {isConnected ? '🟢 Online' : isConnected === false ? '🔴 Offline' : 'Connecting'}
+          {isConnected ? 'Online' : isConnected === false ? 'Offline' : 'Connecting'}
         </Text>
       </TouchableOpacity>
     );
@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   pillConnected: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#e2e8f0',
   },
   pillOffline: {
     backgroundColor: '#FEF2F2',
