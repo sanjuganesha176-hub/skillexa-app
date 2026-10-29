@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently -n \"EXPO,FASTAPI\" -c \"blue,green\" \"npm run frontend\" \"npm run backend\"",
     "frontend": "npx expo start",
-    "backend": "cd backend && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "backend": "cd backend && (.\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload || python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",

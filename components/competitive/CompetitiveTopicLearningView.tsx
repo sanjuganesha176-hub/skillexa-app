@@ -12,15 +12,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppHeader } from '../components/common/AppHeader';
-import { Palette, Radii, Shadows } from '../constants/theme';
+import { AppHeader } from '../common/AppHeader';
+import { Palette, Radii, Shadows } from '../../constants/theme';
 import {
   ENGLISH_22_TOPICS,
   getTopicFullData,
   TopicFullData,
   TopicProgressStore,
-} from '../data/skillexaCurriculum';
-import { ApiClient } from '../services/api';
+} from '../../data/skillexaCurriculum';
+import { ApiClient } from '../../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
