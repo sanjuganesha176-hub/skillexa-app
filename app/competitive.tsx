@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Linking,
   Modal,
@@ -19,6 +19,8 @@ import {
   CURRENT_AFFAIRS_HIGHLIGHTS,
   GOVERNMENT_EXAM_UPDATES,
   GRAND_MOCK_EXAMS,
+  CompetitiveNote,
+  CurrentAffairsItem,
   GovernmentExamUpdate,
   GrandMockExam,
 } from "../data/competativeSkillexaData";
@@ -135,6 +137,123 @@ export default function CompetitiveDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("MODULES");
   const [selectedExam, setSelectedExam] = useState<GovernmentExamUpdate | null>(null);
   const [selectedMock, setSelectedMock] = useState<GrandMockExam | null>(null);
+  const [govtExams, setGovtExams] = useState<GovernmentExamUpdate[]>(GOVERNMENT_EXAM_UPDATES);
+  const [mockExams, setMockExams] = useState<GrandMockExam[]>(GRAND_MOCK_EXAMS);
+  const [currentAffairs, setCurrentAffairs] = useState<CurrentAffairsItem[]>(CURRENT_AFFAIRS_HIGHLIGHTS);
+  const [studyNotes, setStudyNotes] = useState<CompetitiveNote[]>(COMPETITIVE_STUDY_NOTES);
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Probe and fetch live data from competitive Express backend (port 3001)
+    fetch("http://localhost:3001/api/government-exams")
+      .then((r) => r.json())
+      .then((res) => {
+        if (!isMounted) return;
+        const items = res?.data;
+        if (Array.isArray(items) && items.length > 0) {
+          setIsBackendConnected(true);
+          const mapped: GovernmentExamUpdate[] = items.map((item: any) => ({
+            id: item.id,
+            examName: item.exam_name || item.examName || "Government Exam",
+            organization: item.organization || "Govt Agency",
+            category: item.category || "SSC",
+            updateType: item.update_type || "EXAM_NOTIFICATION",
+            title: item.title || "Official Notification",
+            shortDescription: item.short_description || item.shortDescription || "",
+            fullDescription: item.full_description || item.fullDescription || "",
+            postName: item.post_name || item.postName || "Cadre Officer",
+            vacancy: item.vacancy || "Multiple",
+            eligibility: item.eligibility || "Degree / Equivalent",
+            ageLimit: item.age_limit || item.ageLimit || "18-32 Years",
+            qualification: item.qualification || "Bachelor's Degree",
+            applicationFee: item.application_fee || item.applicationFee || "₹100",
+            selectionProcess: item.selection_process || item.selectionProcess || "Written + Interview",
+            officialNotificationNumber: item.official_notification_number || item.officialNotificationNumber || "SKX-2024",
+            notificationDate: item.notification_date || item.notificationDate || "",
+            applicationStartDate: item.application_start_date || item.applicationStartDate || "",
+            applicationLastDate: item.application_last_date || item.applicationLastDate || "TBA",
+            examDate: item.exam_date || item.examDate || "TBA",
+            officialSourceUrl: item.official_source_url || item.officialSourceUrl || "https://ssc.gov.in",
+          }));
+          setGovtExams(mapped);
+        }
+      })
+      .catch(() => {});
+
+    fetch("http://localhost:3001/api/mock-exams")
+      .then((r) => r.json())
+      .then((res) => {
+        if (!isMounted) return;
+        const items = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(items) && items.length > 0) {
+          setIsBackendConnected(true);
+          const mapped: GrandMockExam[] = items.map((m: any) => ({
+            id: m.id,
+            title: m.title || "Grand Mock Test",
+            category: m.category || "Competitive",
+            targetExam: m.target_exam || m.targetExam || "National Exam",
+            description: m.description || "Full-length timed mock test with negative marking.",
+            durationMinutes: m.duration_minutes || m.durationMinutes || 60,
+            totalQuestions: m.total_questions || m.totalQuestions || 25,
+            totalMarks: m.total_marks || m.totalMarks || 100,
+            passingPercentage: m.passing_percentage || m.passingPercentage || 60,
+            negativeMarking: m.negative_marking || m.negativeMarking || 0.25,
+            instructions: [
+              `Total test duration: ${m.duration_minutes || 60} minutes`,
+              `Standard negative marking of ${m.negative_marking || 0.25} per wrong answer`,
+              "Score calculation and answer analysis displayed immediately upon completion",
+            ],
+          }));
+          setMockExams(mapped);
+        }
+      })
+      .catch(() => {});
+
+    fetch("http://localhost:3001/api/current-affairs")
+      .then((r) => r.json())
+      .then((res) => {
+        if (!isMounted) return;
+        const items = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped: CurrentAffairsItem[] = items.map((a: any) => ({
+            id: a.id,
+            title: a.title,
+            category: a.category,
+            summary: a.summary,
+            date: a.date,
+            source: a.source?.publisher || a.source?.title || "Press Information Bureau (PIB)",
+          }));
+          setCurrentAffairs(mapped);
+        }
+      })
+      .catch(() => {});
+
+    fetch("http://localhost:3001/api/notes")
+      .then((r) => r.json())
+      .then((res) => {
+        if (!isMounted) return;
+        const items = res?.data;
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped: CompetitiveNote[] = items.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            subjectName: n.subject_name || "General",
+            fileSize: n.file_size || "1.0 MB",
+            description: n.description || `Verified study notes for ${n.subject_name || 'Competitive Exams'}.`,
+            source: n.source || "Official Faculty Curriculum",
+            fileUrl: n.file_url ? `http://localhost:3001${n.file_url}` : undefined,
+          }));
+          setStudyNotes(mapped);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleOpenSourceUrl = (url: string) => {
     if (url) {
@@ -354,9 +473,17 @@ export default function CompetitiveDashboard() {
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.title, isDark && styles.titleDark]}>
-                  Competitive Exams Hub
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                  <Text style={[styles.title, isDark && styles.titleDark]}>
+                    Competitive Exams Hub
+                  </Text>
+                  {isBackendConnected && (
+                    <View style={styles.liveBadge}>
+                      <View style={styles.liveDot} />
+                      <Text style={styles.liveBadgeText}>Port 3001 Live</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
                   Verified national syllabus, exam notifications & full-length mock tests
                 </Text>
@@ -454,7 +581,7 @@ export default function CompetitiveDashboard() {
                   isDark && styles.tabBtnTextDark,
                 ]}
               >
-                Govt Vacancies ({GOVERNMENT_EXAM_UPDATES.length})
+                Govt Vacancies ({govtExams.length})
               </Text>
             </TouchableOpacity>
 
@@ -480,7 +607,7 @@ export default function CompetitiveDashboard() {
                   isDark && styles.tabBtnTextDark,
                 ]}
               >
-                Grand Mocks ({GRAND_MOCK_EXAMS.length})
+                Grand Mocks ({mockExams.length})
               </Text>
             </TouchableOpacity>
 
@@ -506,7 +633,7 @@ export default function CompetitiveDashboard() {
                   isDark && styles.tabBtnTextDark,
                 ]}
               >
-                Current Affairs
+                Current Affairs ({currentAffairs.length})
               </Text>
             </TouchableOpacity>
 
@@ -532,7 +659,7 @@ export default function CompetitiveDashboard() {
                   isDark && styles.tabBtnTextDark,
                 ]}
               >
-                Notes & Papers
+                Notes & Papers ({studyNotes.length})
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -604,7 +731,7 @@ export default function CompetitiveDashboard() {
           {/* TAB 2: GOVERNMENT EXAM VACANCIES */}
           {activeTab === "EXAMS" && (
             <View>
-              {GOVERNMENT_EXAM_UPDATES.map((exam) => (
+              {govtExams.map((exam) => (
                 <View
                   key={exam.id}
                   style={[styles.moduleCard, isDark && styles.moduleCardDark]}
@@ -671,7 +798,7 @@ export default function CompetitiveDashboard() {
           {/* TAB 3: GRAND MOCK EXAMS */}
           {activeTab === "MOCKS" && (
             <View>
-              {GRAND_MOCK_EXAMS.map((mock) => (
+              {mockExams.map((mock) => (
                 <View
                   key={mock.id}
                   style={[styles.moduleCard, isDark && styles.moduleCardDark]}
@@ -729,7 +856,7 @@ export default function CompetitiveDashboard() {
           {/* TAB 4: CURRENT AFFAIRS */}
           {activeTab === "AFFAIRS" && (
             <View>
-              {CURRENT_AFFAIRS_HIGHLIGHTS.map((item) => (
+              {currentAffairs.map((item) => (
                 <View
                   key={item.id}
                   style={[styles.moduleCard, isDark && styles.moduleCardDark]}
@@ -782,7 +909,7 @@ export default function CompetitiveDashboard() {
                 <Feather name="arrow-right" size={16} color="#D97706" />
               </TouchableOpacity>
 
-              {COMPETITIVE_STUDY_NOTES.map((note) => (
+              {studyNotes.map((note) => (
                 <View
                   key={note.id}
                   style={[styles.moduleCard, isDark && styles.moduleCardDark]}
@@ -817,6 +944,17 @@ export default function CompetitiveDashboard() {
                     <Feather name="check-circle" size={13} color="#10B981" />
                     <Text style={styles.affairsSourceText}>{note.source}</Text>
                   </View>
+
+                  {note.fileUrl && (
+                    <TouchableOpacity
+                      style={[styles.actionBtn, isDark && styles.actionBtnDark, { marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }]}
+                      onPress={() => handleOpenSourceUrl(note.fileUrl!)}
+                      activeOpacity={0.88}
+                    >
+                      <Feather name="download" size={14} color="#FFFFFF" />
+                      <Text style={styles.actionBtnText}>Download PDF Document</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </View>
@@ -864,6 +1002,28 @@ const styles = StyleSheet.create({
   },
   titleDark: {
     color: "#F8FAFC",
+  },
+  liveBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#10B981",
+  },
+  liveBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#10B981",
   },
   subtitle: {
     fontSize: 13.5,

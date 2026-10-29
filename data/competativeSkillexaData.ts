@@ -58,6 +58,7 @@ export interface CompetitiveNote {
   fileSize: string;
   description: string;
   source: string;
+  fileUrl?: string;
 }
 
 export const GOVERNMENT_EXAM_UPDATES: GovernmentExamUpdate[] = [
@@ -288,3 +289,4 @@ export const COMPETITIVE_STUDY_NOTES: CompetitiveNote[] = [
     source: "National Exam Research Portal",
   },
 ];
+
