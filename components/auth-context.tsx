@@ -77,13 +77,13 @@ const getStoredAuthStatus = (): boolean => {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const stored = window.localStorage.getItem(AUTH_STATUS_STORAGE_KEY);
-      if (stored === 'false') return false;
       if (stored === 'true') return true;
+      if (stored === 'false') return false;
     } catch {
       // fallback
     }
   }
-  return true;
+  return false;
 };
 
 const getStoredProfile = (): UserProfile => {
@@ -99,7 +99,7 @@ const getStoredProfile = (): UserProfile => {
 };
 
 const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: true,
+  isAuthenticated: false,
   profile: defaultProfile,
   login: () => {},
   logout: () => {},
