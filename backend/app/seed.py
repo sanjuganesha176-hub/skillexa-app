@@ -243,7 +243,43 @@ def seed_database():
             ],
             points=20,
         )
-        db.add_all([prob1, prob2])
+        prob3 = CodingProblem(
+            title="Binary Search in C++",
+            description="Implement binary search algorithm to find target value in sorted vector `nums` in O(log N) time.",
+            language="cpp",
+            difficulty=DifficultyEnum.EASY,
+            topic="Binary Search",
+            starter_code="#include <iostream>\n#include <vector>\nusing namespace std;\n\nint binarySearch(const vector<int>& nums, int target) {\n    // Write solution\n    return -1;\n}\n",
+            test_cases=[
+                {"input": "nums=[1,3,5,7,9], target=7", "expected": "3"},
+            ],
+            points=15,
+        )
+        prob4 = CodingProblem(
+            title="Valid Parentheses in Java",
+            description="Given a string `s` containing just parentheses `()`, `{}` and `[]`, determine if input string is valid.",
+            language="java",
+            difficulty=DifficultyEnum.EASY,
+            topic="Stacks",
+            starter_code="import java.util.Stack;\n\npublic class Solution {\n    public static boolean isValid(String s) {\n        // Write solution\n        return true;\n    }\n}\n",
+            test_cases=[
+                {"input": "()[]{}", "expected": "true"},
+            ],
+            points=15,
+        )
+        prob5 = CodingProblem(
+            title="Palindrome String Check in JS",
+            description="Check if a string is a palindrome ignoring non-alphanumeric characters and case.",
+            language="javascript",
+            difficulty=DifficultyEnum.EASY,
+            topic="Strings",
+            starter_code="function isPalindrome(str) {\n  // Write solution\n  return true;\n}\n",
+            test_cases=[
+                {"input": "race a car", "expected": "false"},
+            ],
+            points=10,
+        )
+        db.add_all([prob1, prob2, prob3, prob4, prob5])
 
         # 8. Student Progress Record
         prog = StudentProgress(

@@ -51,9 +51,11 @@ from backend.app.routers import (
     questions_router,
     quizzes_router,
     student_router,
+    topics_router,
     videos_router,
     competitive_router,
 )
+
 from backend.app.seed import seed_database
 from backend.app.seed_competitive import seed_competitive_curriculum
 
@@ -104,6 +106,7 @@ app.include_router(interviews_router, prefix=settings.API_V1_STR)
 app.include_router(notifications_router, prefix=settings.API_V1_STR)
 app.include_router(progress_router, prefix=settings.API_V1_STR)
 app.include_router(competitive_router, prefix=settings.API_V1_STR)
+app.include_router(topics_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", tags=["Health"])
