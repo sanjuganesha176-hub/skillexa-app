@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -12,11 +13,12 @@ import {
   View,
 } from 'react-native';
 import { AppHeader } from '../../components/common/AppHeader';
-import { Palette, Radii, Shadows } from '../../constants/theme';
+import { useTheme } from '../../components/theme-context';
 import { QuestionMetadata } from '../../data/curriculumSchema';
 import { FacultySystemStore } from '../../services/facultyStore';
 
 export default function QuestionBankScreen() {
+  const { isDark } = useTheme();
   const [bank, setBank] = useState<QuestionMetadata[]>([]);
   const [selectedSection, setSelectedSection] = useState<'all' | 'engineering' | 'competitive'>('all');
   const [selectedDiff, setSelectedDiff] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
@@ -61,22 +63,18 @@ export default function QuestionBankScreen() {
 
     FacultySystemStore.addQuestionToBank({
       section: newSection,
-      category: newSection === 'engineering' ? 'subjects' : 'aptitude',
+      category: 'subjects',
+      questionType: 'mcq',
       subject: newSubject.trim(),
       topic: newTopic.trim(),
-      difficulty,
-      questionType: 'mcq',
       question: newQuestion.trim(),
       options: [optA.trim(), optB.trim(), optC.trim(), optD.trim()],
       correctAnswer,
-      explanation: explanation.trim() || 'Verified by Faculty Educator.',
-      marks: 2,
-      negativeMarks: 0.5,
-      isFacultyCreated: true,
-      facultyName: 'Dr. Ramesh Kumar',
+      explanation: explanation.trim() || 'Verified answer by Faculty',
+      difficulty,
     });
 
-    Alert.alert('Added to Bank', 'Question saved to Question Bank successfully.');
+    Alert.alert('Question Added', 'Your question has been saved to the permanent Question Bank repository.');
     setShowAddForm(false);
     setNewQuestion('');
     setOptA('');
@@ -87,145 +85,203 @@ export default function QuestionBankScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppHeader showBack title="Question Bank Management" subtitle="Filter, Search & Save Questions" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#070B14" : "#FFFFFF"}
+      />
+      <AppHeader
+        showBack
+        title="Question Bank"
+        subtitle="Permanent Assessment Repository"
+        backLabel="Faculty Hub"
+        onBack={() => router.push('/faculty-dashboard' as any)}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Top Control Bar */}
-        <View style={styles.topControlRow}>
-          <View style={styles.searchBox}>
-            <Feather name="search" size={16} color={Palette.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by topic, keyword, or subject..."
-              placeholderTextColor={Palette.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddForm(!showAddForm)}>
-            <Feather name={showAddForm ? 'x' : 'plus'} size={18} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>{showAddForm ? 'Close' : 'Add Question'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Section Filters */}
-        <View style={styles.filterPillsRow}>
-          {(['all', 'engineering', 'competitive'] as const).map((sec) => (
-            <TouchableOpacity
-              key={sec}
-              style={[styles.filterPill, selectedSection === sec && styles.filterPillActive]}
-              onPress={() => setSelectedSection(sec)}
-            >
-              <Text style={[styles.filterText, selectedSection === sec && styles.filterTextActive]}>
-                {sec === 'all' ? 'All Sections' : sec.charAt(0).toUpperCase() + sec.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Form Drawer if open */}
-        {showAddForm && (
-          <View style={styles.addFormCard}>
-            <Text style={styles.formTitle}>Add New Question to Bank</Text>
-
-            <View style={styles.rowInputs}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>SECTION</Text>
-                <TextInput style={styles.input} value={newSection} onChangeText={(t) => setNewSection(t as any)} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>SUBJECT</Text>
-                <TextInput style={styles.input} value={newSubject} onChangeText={setNewSubject} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>TOPIC</Text>
-                <TextInput style={styles.input} value={newTopic} onChangeText={setNewTopic} />
-              </View>
+        <View style={styles.container}>
+          {/* Top Search & Add Control */}
+          <View style={styles.topControlRow}>
+            <View style={[styles.searchBox, isDark && styles.searchBoxDark]}>
+              <Feather name="search" size={16} color={isDark ? "#94A3B8" : "#64748B"} />
+              <TextInput
+                style={[styles.searchInput, isDark && styles.textWhite]}
+                placeholder="Search by topic, keyword, or subject..."
+                placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </View>
 
-            <Text style={[styles.label, { marginTop: 10 }]}>QUESTION STATEMENT</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Type question..."
-              placeholderTextColor={Palette.textMuted}
-              multiline
-              value={newQuestion}
-              onChangeText={setNewQuestion}
-            />
+            <TouchableOpacity
+              style={[styles.addBtn, isDark && styles.addBtnDark]}
+              onPress={() => setShowAddForm(!showAddForm)}
+              activeOpacity={0.88}
+            >
+              <Feather name={showAddForm ? 'x' : 'plus'} size={16} color="#FFFFFF" />
+              <Text style={styles.addBtnText}>{showAddForm ? 'Close' : 'Add Question'}</Text>
+            </TouchableOpacity>
+          </View>
 
-            <Text style={[styles.label, { marginTop: 10 }]}>4 MULTIPLE-CHOICE OPTIONS</Text>
-            {[
-              { text: optA, set: setOptA, idx: 0 },
-              { text: optB, set: setOptB, idx: 1 },
-              { text: optC, set: setOptC, idx: 2 },
-              { text: optD, set: setOptD, idx: 3 },
-            ].map((o) => (
-              <View key={o.idx} style={styles.optRow}>
-                <TouchableOpacity
-                  style={[styles.radio, correctAnswer === o.idx && styles.radioActive]}
-                  onPress={() => setCorrectAnswer(o.idx)}
+          {/* Section Filter Pills */}
+          <View style={styles.filterPillsRow}>
+            {(['all', 'engineering', 'competitive'] as const).map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={[
+                  styles.filterPill,
+                  isDark && styles.filterPillDark,
+                  selectedSection === s && styles.filterPillActive,
+                ]}
+                onPress={() => setSelectedSection(s)}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    isDark && styles.filterTextDark,
+                    selectedSection === s && styles.filterTextActive,
+                  ]}
                 >
-                  {correctAnswer === o.idx && <View style={styles.radioDot} />}
-                </TouchableOpacity>
-                <TextInput
-                  style={styles.optInput}
-                  placeholder={`Option ${String.fromCharCode(65 + o.idx)}`}
-                  placeholderTextColor={Palette.textMuted}
-                  value={o.text}
-                  onChangeText={o.set}
-                />
+                  {s === 'all' ? 'All Sections' : s === 'engineering' ? 'Engineering' : 'Competitive'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Add Question Form Card */}
+          {showAddForm && (
+            <View style={[styles.addFormCard, isDark && styles.addFormCardDark]}>
+              <Text style={[styles.formTitle, isDark && styles.textWhite]}>Author New Bank Question</Text>
+
+              <View style={styles.rowInputs}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, isDark && styles.labelDark]}>SUBJECT</Text>
+                  <TextInput
+                    style={[styles.input, isDark && styles.inputDark]}
+                    value={newSubject}
+                    onChangeText={setNewSubject}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, isDark && styles.labelDark]}>TOPIC</Text>
+                  <TextInput
+                    style={[styles.input, isDark && styles.inputDark]}
+                    value={newTopic}
+                    onChangeText={setNewTopic}
+                  />
+                </View>
+              </View>
+
+              <Text style={[styles.label, { marginTop: 10 }, isDark && styles.labelDark]}>
+                QUESTION STATEMENT *
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea, isDark && styles.inputDark]}
+                placeholder="Type question statement clearly..."
+                placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                multiline
+                value={newQuestion}
+                onChangeText={setNewQuestion}
+              />
+
+              <Text style={[styles.label, { marginTop: 10 }, isDark && styles.labelDark]}>
+                OPTIONS & CORRECT ANSWER (RADIO)
+              </Text>
+
+              {[
+                { val: optA, set: setOptA, idx: 0, label: 'A' },
+                { val: optB, set: setOptB, idx: 1, label: 'B' },
+                { val: optC, set: setOptC, idx: 2, label: 'C' },
+                { val: optD, set: setOptD, idx: 3, label: 'D' },
+              ].map((item) => (
+                <View key={item.idx} style={styles.optRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.radio,
+                      isDark && styles.radioDark,
+                      correctAnswer === item.idx && styles.radioActive,
+                    ]}
+                    onPress={() => setCorrectAnswer(item.idx)}
+                  >
+                    {correctAnswer === item.idx && <View style={styles.radioDot} />}
+                  </TouchableOpacity>
+                  <TextInput
+                    style={[styles.optInput, isDark && styles.optInputDark]}
+                    placeholder={`Option ${item.label}`}
+                    placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                    value={item.val}
+                    onChangeText={item.set}
+                  />
+                </View>
+              ))}
+
+              <Text style={[styles.label, { marginTop: 10 }, isDark && styles.labelDark]}>EXPLANATION</Text>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                placeholder="Why is this answer correct?"
+                placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                value={explanation}
+                onChangeText={setExplanation}
+              />
+
+              <TouchableOpacity
+                style={[styles.saveBankBtn, isDark && styles.saveBankBtnDark]}
+                onPress={handleSaveQuestion}
+                activeOpacity={0.88}
+              >
+                <Text style={styles.saveBankBtnText}>Save Question to Bank →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Questions List */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, isDark && styles.textWhite]}>
+              Question Repository ({filtered.length})
+            </Text>
+          </View>
+
+          <View style={styles.list}>
+            {filtered.map((q) => (
+              <View key={q.id} style={[styles.bankCard, isDark && styles.bankCardDark]}>
+                <View style={styles.bankCardHeader}>
+                  <View style={[styles.badge, isDark && styles.badgeDark]}>
+                    <Text style={[styles.badgeText, isDark && styles.badgeTextDark]}>
+                      {q.subject} • {q.topic}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => FacultySystemStore.deleteQuestionFromBank(q.id)}>
+                    <Feather name="trash-2" size={15} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.qStatement, isDark && styles.textWhite]}>{q.question}</Text>
+
+                <View style={styles.optionsList}>
+                  {q.options?.map((opt, oIdx) => (
+                    <Text
+                      key={oIdx}
+                      style={[
+                        styles.opText,
+                        isDark && styles.textMutedDark,
+                        q.correctAnswer === oIdx && styles.opCorrect,
+                      ]}
+                    >
+                      {String.fromCharCode(65 + oIdx)}. {opt} {q.correctAnswer === oIdx ? '✓ (Correct)' : ''}
+                    </Text>
+                  ))}
+                </View>
+
+                {q.explanation ? (
+                  <View style={[styles.expBox, isDark && styles.expBoxDark]}>
+                    <Text style={[styles.expText, isDark && styles.textMutedDark]}>
+                      💡 Solution: {q.explanation}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             ))}
-
-            <Text style={[styles.label, { marginTop: 10 }]}>EXPLANATION</Text>
-            <TextInput
-              style={[styles.input, { height: 50 }]}
-              placeholder="Explanation..."
-              placeholderTextColor={Palette.textMuted}
-              multiline
-              value={explanation}
-              onChangeText={setExplanation}
-            />
-
-            <TouchableOpacity style={styles.saveBankBtn} onPress={handleSaveQuestion}>
-              <Text style={styles.saveBankBtnText}>Save to Question Bank</Text>
-            </TouchableOpacity>
           </View>
-        )}
-
-        {/* Questions List */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Saved Question Repository ({filtered.length})</Text>
-        </View>
-
-        <View style={styles.list}>
-          {filtered.map((item, idx) => (
-            <View key={item.id} style={styles.bankCard}>
-              <View style={styles.bankCardHeader}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.subject} • {item.topic}</Text>
-                </View>
-                <TouchableOpacity onPress={() => FacultySystemStore.deleteQuestionFromBank(item.id)}>
-                  <Feather name="trash-2" size={15} color={Palette.danger} />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.qStatement}>Q{idx + 1}: {item.question}</Text>
-
-              <View style={styles.optionsList}>
-                {item.options?.map((op, i) => (
-                  <Text key={i} style={[styles.opText, i === item.correctAnswer && styles.opCorrect]}>
-                    {String.fromCharCode(65 + i)}. {op} {i === item.correctAnswer ? '✓' : ''}
-                  </Text>
-                ))}
-              </View>
-
-              <Text style={styles.expBox}>💡 {item.explanation}</Text>
-            </View>
-          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -233,59 +289,315 @@ export default function QuestionBankScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Palette.background },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
-  topControlRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeAreaDark: {
+    backgroundColor: '#070B14',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 48,
+  },
+  container: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
+  },
+  topControlRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.input,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: Palette.border,
+    borderColor: '#E2E8F0',
     gap: 8,
   },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 13, color: Palette.textTitle },
+  searchBoxDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#0f172a',
+  },
   addBtn: {
-    backgroundColor: Palette.primary,
-    borderRadius: Radii.button,
+    backgroundColor: '#0A192F',
+    borderRadius: 12,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    ...Shadows.button,
+    shadowColor: '#0A192F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  addBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  filterPillsRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  filterPill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: Radii.pill, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Palette.border },
-  filterPillActive: { backgroundColor: Palette.primary, borderColor: Palette.primary },
-  filterText: { fontSize: 12, fontWeight: '600', color: Palette.textSecondary },
-  filterTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  addFormCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: Palette.border, marginBottom: 18, ...Shadows.card },
-  formTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle, marginBottom: 12 },
-  rowInputs: { flexDirection: 'row', gap: 8 },
-  label: { fontSize: 10, fontWeight: '800', color: Palette.textTitle, letterSpacing: 0.6, marginBottom: 4 },
-  input: { backgroundColor: Palette.backgroundSecondary, borderRadius: Radii.input, borderWidth: 1, borderColor: Palette.border, padding: 8, fontSize: 12.5, color: Palette.textTitle },
-  textArea: { height: 55, textAlignVertical: 'top' },
-  optRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Palette.border, alignItems: 'center', justifyContent: 'center' },
-  radioActive: { borderColor: Palette.primary },
-  radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Palette.primary },
-  optInput: { flex: 1, backgroundColor: Palette.backgroundSecondary, borderRadius: Radii.input, borderWidth: 1, borderColor: Palette.border, paddingHorizontal: 8, paddingVertical: 6, fontSize: 12, color: Palette.textTitle },
-  saveBankBtn: { backgroundColor: Palette.primary, borderRadius: Radii.button, paddingVertical: 11, alignItems: 'center', marginTop: 12 },
-  saveBankBtnText: { color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' },
-  sectionHeaderRow: { marginBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: Palette.textTitle },
-  list: { gap: 10 },
-  bankCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
-  bankCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  badge: { backgroundColor: Palette.primaryLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { fontSize: 10.5, fontWeight: '700', color: Palette.primary },
-  qStatement: { fontSize: 13.5, fontWeight: '700', color: Palette.textTitle, marginBottom: 8, lineHeight: 19 },
-  optionsList: { gap: 3, marginBottom: 8 },
-  opText: { fontSize: 12, color: Palette.textSecondary },
-  opCorrect: { color: Palette.success, fontWeight: '700' },
-  expBox: { backgroundColor: Palette.backgroundSecondary, padding: 8, borderRadius: 6, fontSize: 11.5, color: Palette.textBody },
+  addBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+    borderWidth: 1,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  filterPillDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  filterPillActive: {
+    backgroundColor: '#0A192F',
+    borderColor: '#0A192F',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  filterTextDark: {
+    color: '#94A3B8',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  addFormCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    marginBottom: 20,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addFormCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  label: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#334155',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  labelDark: {
+    color: '#94A3B8',
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+    color: '#0f172a',
+  },
+  inputDark: {
+    backgroundColor: '#070B14',
+    borderColor: '#1E293B',
+    color: '#F8FAFC',
+  },
+  textArea: {
+    height: 60,
+    textAlignVertical: 'top',
+  },
+  optRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDark: {
+    borderColor: '#475569',
+  },
+  radioActive: {
+    borderColor: '#0066FF',
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0066FF',
+  },
+  optInput: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 12.5,
+    color: '#0f172a',
+  },
+  optInputDark: {
+    backgroundColor: '#070B14',
+    borderColor: '#1E293B',
+    color: '#F8FAFC',
+  },
+  saveBankBtn: {
+    backgroundColor: '#0A192F',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 14,
+    shadowColor: '#0A192F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  saveBankBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+    borderWidth: 1,
+  },
+  saveBankBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  sectionHeaderRow: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  list: {
+    gap: 12,
+  },
+  bankCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  bankCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  bankCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  badge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeDark: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+  },
+  badgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0066FF',
+  },
+  badgeTextDark: {
+    color: '#38BDF8',
+  },
+  qStatement: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  optionsList: {
+    gap: 4,
+    marginBottom: 10,
+  },
+  opText: {
+    fontSize: 12.5,
+    color: '#64748b',
+  },
+  opCorrect: {
+    color: '#10B981',
+    fontWeight: '700',
+  },
+  expBox: {
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  expBoxDark: {
+    backgroundColor: '#070B14',
+    borderColor: '#1E293B',
+  },
+  expText: {
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 16,
+  },
+  textWhite: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
+  },
 });

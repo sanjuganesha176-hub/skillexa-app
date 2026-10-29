@@ -14,7 +14,7 @@ import {
 import { TargetAudienceSelector } from '../../components/TargetAudienceSelector';
 import { useAuth } from '../../components/auth-context';
 import { AppHeader } from '../../components/common/AppHeader';
-import { Palette, Radii, Shadows } from '../../constants/theme';
+import { useTheme } from '../../components/theme-context';
 import { TargetAudience } from '../../data/collegeData';
 import { FacultyVideo } from '../../data/curriculumSchema';
 import { CollegeStore } from '../../services/collegeStore';
@@ -22,6 +22,7 @@ import { FacultySystemStore } from '../../services/facultyStore';
 
 export default function FacultyVideosScreen() {
   const { profile } = useAuth();
+  const { isDark } = useTheme();
   const [videos, setVideos] = useState<FacultyVideo[]>([]);
   const [section, setSection] = useState<'engineering' | 'competitive'>('engineering');
   const [subject, setSubject] = useState('Embedded Systems');
@@ -100,70 +101,92 @@ export default function FacultyVideosScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={isDark ? '#070B14' : '#FFFFFF'} />
       <AppHeader showBack title="Faculty Video Lectures" subtitle="Attach Educational Videos to Topics" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Banner */}
-        <View style={styles.banner}>
-          <Feather name="film" size={22} color={Palette.aiPurple} />
+        <View style={[styles.banner, isDark && styles.bannerDark]}>
+          <View style={[styles.iconBox, isDark && styles.iconBoxDark]}>
+            <Feather name="film" size={20} color={isDark ? '#60A5FA' : '#0A192F'} />
+          </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.bannerTitle}>Attach Topic Video Lessons</Text>
-            <Text style={styles.bannerDesc}>
+            <Text style={[styles.bannerTitle, isDark && styles.textWhite]}>Attach Topic Video Lessons</Text>
+            <Text style={[styles.bannerDesc, isDark && styles.textMutedDark]}>
               Lectures published here appear inside the corresponding student topic view marked with 🎥 Faculty Video.
             </Text>
           </View>
         </View>
 
         {/* Video Attacher Form */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>1. Target Topic & Video Metadata</Text>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <Text style={[styles.cardTitle, isDark && styles.textWhite]}>1. Target Topic & Video Metadata</Text>
 
           <View style={styles.gridRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>SECTION</Text>
-              <TextInput style={styles.input} value={section} onChangeText={(t) => setSection(t as any)} />
+              <Text style={[styles.label, isDark && styles.textMutedDark]}>SECTION</Text>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                value={section}
+                onChangeText={(t) => setSection(t as any)}
+                placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>SUBJECT</Text>
-              <TextInput style={styles.input} value={subject} onChangeText={setSubject} />
+              <Text style={[styles.label, isDark && styles.textMutedDark]}>SUBJECT</Text>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                value={subject}
+                onChangeText={setSubject}
+                placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              />
             </View>
           </View>
 
-          <Text style={[styles.label, { marginTop: 10 }]}>TOPIC NAME *</Text>
-          <TextInput style={styles.input} value={topic} onChangeText={setTopic} />
-
-          <Text style={[styles.label, { marginTop: 10 }]}>VIDEO TITLE *</Text>
+          <Text style={[styles.label, isDark && styles.textMutedDark, { marginTop: 12 }]}>TOPIC NAME *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark && styles.inputDark]}
+            value={topic}
+            onChangeText={setTopic}
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+          />
+
+          <Text style={[styles.label, isDark && styles.textMutedDark, { marginTop: 12 }]}>VIDEO TITLE *</Text>
+          <TextInput
+            style={[styles.input, isDark && styles.inputDark]}
             placeholder="e.g. In-Depth ARM Cortex-M NVIC Interrupts"
-            placeholderTextColor={Palette.textMuted}
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
             value={title}
             onChangeText={setTitle}
           />
 
-          <Text style={[styles.label, { marginTop: 10 }]}>VIDEO URL (YOUTUBE / MP4 STREAM) *</Text>
+          <Text style={[styles.label, isDark && styles.textMutedDark, { marginTop: 12 }]}>VIDEO URL (YOUTUBE / MP4 STREAM) *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark && styles.inputDark]}
             placeholder="https://www.youtube.com/watch?v=..."
-            placeholderTextColor={Palette.textMuted}
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
             value={videoUrl}
             onChangeText={setVideoUrl}
           />
 
-          <View style={[styles.gridRow, { marginTop: 10 }]}>
+          <View style={[styles.gridRow, { marginTop: 12 }]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>DURATION</Text>
-              <TextInput style={styles.input} value={duration} onChangeText={setDuration} />
+              <Text style={[styles.label, isDark && styles.textMutedDark]}>DURATION</Text>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                value={duration}
+                onChangeText={setDuration}
+                placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              />
             </View>
           </View>
 
-          <Text style={[styles.label, { marginTop: 10 }]}>DESCRIPTION</Text>
+          <Text style={[styles.label, isDark && styles.textMutedDark, { marginTop: 12 }]}>DESCRIPTION</Text>
           <TextInput
-            style={[styles.input, { height: 60 }]}
+            style={[styles.input, isDark && styles.inputDark, { height: 70, textAlignVertical: 'top' }]}
             placeholder="Key concepts discussed in this lecture..."
-            placeholderTextColor={Palette.textMuted}
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
             multiline
             value={description}
             onChangeText={setDescription}
@@ -180,7 +203,11 @@ export default function FacultyVideosScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.publishBtn} onPress={handlePublishVideo} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.publishBtn, isDark && styles.publishBtnDark]}
+            onPress={handlePublishVideo}
+            activeOpacity={0.85}
+          >
             <Feather name="upload" size={16} color="#FFFFFF" />
             <Text style={styles.publishBtnText}>Publish Video to Topic</Text>
           </TouchableOpacity>
@@ -188,25 +215,31 @@ export default function FacultyVideosScreen() {
 
         {/* Existing Attached Videos */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Attached Topic Videos ({videos.length})</Text>
+          <Text style={[styles.sectionTitle, isDark && styles.textWhite]}>Attached Topic Videos ({videos.length})</Text>
         </View>
 
         <View style={styles.list}>
           {videos.map((v) => (
-            <View key={v.id} style={styles.videoCard}>
+            <View key={v.id} style={[styles.videoCard, isDark && styles.videoCardDark]}>
               <View style={styles.cardHeader}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{v.subject} • {v.topic}</Text>
+                <View style={[styles.badge, isDark && styles.badgeDark]}>
+                  <Text style={[styles.badgeText, isDark && styles.badgeTextDark]}>
+                    {v.subject} • {v.topic}
+                  </Text>
                 </View>
-                <TouchableOpacity onPress={() => FacultySystemStore.deleteVideo(v.id)}>
-                  <Feather name="trash-2" size={15} color={Palette.danger} />
+                <TouchableOpacity onPress={() => FacultySystemStore.deleteVideo(v.id)} activeOpacity={0.7}>
+                  <Feather name="trash-2" size={15} color="#EF4444" />
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.vTitle}>{v.title}</Text>
-              <Text style={styles.vUrl} numberOfLines={1}>🔗 {v.videoUrl}</Text>
-              <Text style={styles.vDesc}>{v.description}</Text>
-              <Text style={styles.vMeta}>Duration: {v.duration || '15 mins'} • By {v.facultyName}</Text>
+              <Text style={[styles.vTitle, isDark && styles.textWhite]}>{v.title}</Text>
+              <Text style={[styles.vUrl, isDark && { color: '#60A5FA' }]} numberOfLines={1}>
+                🔗 {v.videoUrl}
+              </Text>
+              <Text style={[styles.vDesc, isDark && styles.textMutedDark]}>{v.description}</Text>
+              <Text style={[styles.vMeta, isDark && { color: '#64748b' }]}>
+                Duration: {v.duration || '15 mins'} • By {v.facultyName}
+              </Text>
             </View>
           ))}
         </View>
@@ -216,50 +249,207 @@ export default function FacultyVideosScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Palette.background },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeAreaDark: {
+    backgroundColor: '#070B14',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
   banner: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Palette.aiPurpleBorder,
+    borderColor: '#eef2f6',
     borderLeftWidth: 4,
-    borderLeftColor: Palette.aiPurple,
+    borderLeftColor: '#0A192F',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     marginBottom: 18,
-    ...Shadows.card,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  bannerTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle },
-  bannerDesc: { fontSize: 12, color: Palette.textSecondary, marginTop: 2 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: Palette.border, marginBottom: 20, ...Shadows.card },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle, marginBottom: 12 },
-  gridRow: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 10, fontWeight: '800', color: Palette.textTitle, letterSpacing: 0.6, marginBottom: 4 },
-  input: { backgroundColor: Palette.backgroundSecondary, borderRadius: Radii.input, borderWidth: 1, borderColor: Palette.border, padding: 10, fontSize: 13, color: Palette.textTitle },
+  bannerDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+    borderLeftColor: '#60A5FA',
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBoxDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  bannerTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  bannerDesc: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  label: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
+    fontSize: 13,
+    color: '#0f172a',
+  },
+  inputDark: {
+    backgroundColor: '#162032',
+    borderColor: '#334155',
+    color: '#F8FAFC',
+  },
   publishBtn: {
-    backgroundColor: Palette.aiPurple,
-    borderRadius: Radii.button,
+    backgroundColor: '#0A192F',
+    borderRadius: 12,
     paddingVertical: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     marginTop: 14,
-    ...Shadows.button,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  publishBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  sectionHeaderRow: { marginBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: Palette.textTitle },
-  list: { gap: 10 },
-  videoCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  badge: { backgroundColor: Palette.aiPurpleLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { fontSize: 10.5, fontWeight: '700', color: Palette.aiPurple },
-  vTitle: { fontSize: 14.5, fontWeight: '800', color: Palette.textTitle, marginBottom: 2 },
-  vUrl: { fontSize: 11.5, color: Palette.primary, marginBottom: 4 },
-  vDesc: { fontSize: 12, color: Palette.textSecondary, marginBottom: 6 },
-  vMeta: { fontSize: 11, color: Palette.textMuted },
+  publishBtnDark: {
+    backgroundColor: '#1E293B',
+  },
+  publishBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sectionHeaderRow: {
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  list: {
+    gap: 10,
+  },
+  videoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  videoCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  badge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  badgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0A192F',
+  },
+  badgeTextDark: {
+    color: '#60A5FA',
+  },
+  vTitle: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+  vUrl: {
+    fontSize: 11.5,
+    color: '#2563EB',
+    marginBottom: 4,
+  },
+  vDesc: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 6,
+  },
+  vMeta: {
+    fontSize: 11,
+    color: '#94a3b8',
+  },
+  textWhite: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
+  },
 });

@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 import { AppHeader } from '../../components/common/AppHeader';
 import { ProgressBar } from '../../components/common/EducationalCards';
-import { Palette, Radii, Shadows } from '../../constants/theme';
+import { useTheme } from '../../components/theme-context';
 import { StudentTopicPerformance } from '../../data/curriculumSchema';
 import { FacultySystemStore } from '../../services/facultyStore';
 
 export default function StudentPerformanceScreen() {
+  const { isDark } = useTheme();
   const [students, setStudents] = useState<StudentTopicPerformance[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentTopicPerformance | null>(null);
 
@@ -31,33 +32,46 @@ export default function StudentPerformanceScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={isDark ? '#070B14' : '#FFFFFF'} />
       <AppHeader showBack title="Student Performance Analytics" subtitle="Topic-Wise Progress Tracking" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Student Selector Bar */}
         <View style={styles.selectorSection}>
-          <Text style={styles.sectionHeading}>SELECT ENROLLED STUDENT</Text>
+          <Text style={[styles.sectionHeading, isDark && styles.textMutedDark]}>SELECT ENROLLED STUDENT</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.studentChips}>
             {students.map((s) => {
               const isSelected = selectedStudent?.studentId === s.studentId;
               return (
                 <TouchableOpacity
                   key={s.studentId}
-                  style={[styles.studentChip, isSelected && styles.studentChipActive]}
+                  style={[
+                    styles.studentChip,
+                    isDark && styles.studentChipDark,
+                    isSelected && (isDark ? styles.studentChipActiveDark : styles.studentChipActive),
+                  ]}
                   onPress={() => setSelectedStudent(s)}
+                  activeOpacity={0.7}
                 >
-                  <View style={[styles.avatarBox, isSelected && styles.avatarBoxActive]}>
-                    <Text style={[styles.avatarLetter, isSelected && { color: '#FFFFFF' }]}>
+                  <View style={[styles.avatarBox, isDark && styles.avatarBoxDark, isSelected && styles.avatarBoxActive]}>
+                    <Text style={[styles.avatarLetter, isDark && styles.textWhite, isSelected && { color: '#FFFFFF' }]}>
                       {s.studentName.charAt(0)}
                     </Text>
                   </View>
                   <View>
-                    <Text style={[styles.studentChipName, isSelected && styles.studentChipNameActive]}>
+                    <Text
+                      style={[
+                        styles.studentChipName,
+                        isDark && styles.textWhite,
+                        isSelected && (isDark ? styles.textWhite : { color: '#0A192F' }),
+                      ]}
+                    >
                       {s.studentName}
                     </Text>
-                    <Text style={styles.studentChipScore}>Avg Score: {s.overallScore}%</Text>
+                    <Text style={[styles.studentChipScore, isDark && styles.textMutedDark]}>
+                      Avg Score: {s.overallScore}%
+                    </Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -68,49 +82,51 @@ export default function StudentPerformanceScreen() {
         {selectedStudent && (
           <View style={styles.detailsContainer}>
             {/* Student Profile Card */}
-            <View style={styles.profileCard}>
+            <View style={[styles.profileCard, isDark && styles.profileCardDark]}>
               <View style={styles.profileHeader}>
                 <View style={styles.largeAvatar}>
                   <Text style={styles.largeAvatarText}>{selectedStudent.studentName.charAt(0)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.profileName}>{selectedStudent.studentName}</Text>
-                  <Text style={styles.profileEmail}>{selectedStudent.email}</Text>
-                  <View style={styles.proBadge}>
-                    <Text style={styles.proBadgeText}>Level 4 Scholar • Top 10% Batch</Text>
+                  <Text style={[styles.profileName, isDark && styles.textWhite]}>{selectedStudent.studentName}</Text>
+                  <Text style={[styles.profileEmail, isDark && styles.textMutedDark]}>{selectedStudent.email}</Text>
+                  <View style={[styles.proBadge, isDark && styles.proBadgeDark]}>
+                    <Text style={[styles.proBadgeText, isDark && styles.proBadgeTextDark]}>
+                      Level 4 Scholar • Top 10% Batch
+                    </Text>
                   </View>
                 </View>
               </View>
 
               {/* High-level metrics 4-grid */}
-              <View style={styles.metricsGrid}>
+              <View style={[styles.metricsGrid, isDark && styles.metricsGridDark]}>
                 <View style={styles.metricItem}>
-                  <Text style={styles.metricLabel}>QUIZ ACCURACY</Text>
-                  <Text style={[styles.metricVal, { color: Palette.success }]}>{selectedStudent.quizAccuracy}%</Text>
+                  <Text style={[styles.metricLabel, isDark && styles.textMutedDark]}>QUIZ ACCURACY</Text>
+                  <Text style={[styles.metricVal, { color: '#10B981' }]}>{selectedStudent.quizAccuracy}%</Text>
                 </View>
 
                 <View style={styles.metricItem}>
-                  <Text style={styles.metricLabel}>NOTES READ</Text>
-                  <Text style={styles.metricVal}>{selectedStudent.notesCompletedCount}</Text>
+                  <Text style={[styles.metricLabel, isDark && styles.textMutedDark]}>NOTES READ</Text>
+                  <Text style={[styles.metricVal, isDark && styles.textWhite]}>{selectedStudent.notesCompletedCount}</Text>
                 </View>
 
                 <View style={styles.metricItem}>
-                  <Text style={styles.metricLabel}>CODING SOLVED</Text>
-                  <Text style={[styles.metricVal, { color: Palette.primary }]}>{selectedStudent.codingSolvedCount}</Text>
+                  <Text style={[styles.metricLabel, isDark && styles.textMutedDark]}>CODING SOLVED</Text>
+                  <Text style={[styles.metricVal, { color: '#2563EB' }]}>{selectedStudent.codingSolvedCount}</Text>
                 </View>
 
                 <View style={styles.metricItem}>
-                  <Text style={styles.metricLabel}>DSA PROGRESS</Text>
-                  <Text style={[styles.metricVal, { color: Palette.aiPurple }]}>{selectedStudent.dsaProgressPct}%</Text>
+                  <Text style={[styles.metricLabel, isDark && styles.textMutedDark]}>DSA PROGRESS</Text>
+                  <Text style={[styles.metricVal, { color: '#8B5CF6' }]}>{selectedStudent.dsaProgressPct}%</Text>
                 </View>
               </View>
             </View>
 
             {/* Topic-Wise Performance Breakdown */}
-            <View style={styles.topicBreakdownCard}>
+            <View style={[styles.topicBreakdownCard, isDark && styles.topicBreakdownCardDark]}>
               <View style={styles.breakdownHeader}>
-                <Feather name="bar-chart-2" size={18} color={Palette.primary} />
-                <Text style={styles.breakdownTitle}>Granular Topic-Wise Mastery</Text>
+                <Feather name="bar-chart-2" size={18} color={isDark ? '#60A5FA' : '#0A192F'} />
+                <Text style={[styles.breakdownTitle, isDark && styles.textWhite]}>Granular Topic-Wise Mastery</Text>
               </View>
 
               <View style={styles.topicList}>
@@ -118,16 +134,21 @@ export default function StudentPerformanceScreen() {
                   <View key={idx} style={styles.topicRow}>
                     <View style={styles.topicMetaRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.subjectTag}>{tm.subject}</Text>
-                        <Text style={styles.topicTitleText}>{tm.topic}</Text>
+                        <Text style={[styles.subjectTag, isDark && { color: '#60A5FA' }]}>{tm.subject}</Text>
+                        <Text style={[styles.topicTitleText, isDark && styles.textWhite]}>{tm.topic}</Text>
                       </View>
-                      <Text style={[styles.percentageText, tm.percentage < 70 ? { color: Palette.warning } : { color: Palette.success }]}>
+                      <Text
+                        style={[
+                          styles.percentageText,
+                          tm.percentage < 70 ? { color: '#F59E0B' } : { color: '#10B981' },
+                        ]}
+                      >
                         {tm.percentage}%
                       </Text>
                     </View>
                     <ProgressBar
                       progress={tm.percentage / 100}
-                      color={tm.percentage < 70 ? Palette.warning : Palette.primary}
+                      color={tm.percentage < 70 ? '#F59E0B' : (isDark ? '#60A5FA' : '#0A192F')}
                     />
                   </View>
                 ))}
@@ -141,50 +162,236 @@ export default function StudentPerformanceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Palette.background },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
-  selectorSection: { marginBottom: 16 },
-  sectionHeading: { fontSize: 10.5, fontWeight: '800', color: Palette.textTitle, letterSpacing: 0.8, marginBottom: 8 },
-  studentChips: { gap: 10, paddingVertical: 2 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeAreaDark: {
+    backgroundColor: '#070B14',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  selectorSection: {
+    marginBottom: 16,
+  },
+  sectionHeading: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  studentChips: {
+    gap: 10,
+    paddingVertical: 2,
+  },
   studentChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
+    borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
+    borderColor: '#eef2f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  studentChipActive: { borderColor: Palette.primary, backgroundColor: Palette.primaryLight },
-  avatarBox: { width: 34, height: 34, borderRadius: 17, backgroundColor: Palette.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
-  avatarBoxActive: { backgroundColor: Palette.primary },
-  avatarLetter: { fontSize: 14, fontWeight: '800', color: Palette.textTitle },
-  studentChipName: { fontSize: 13.5, fontWeight: '700', color: Palette.textTitle },
-  studentChipNameActive: { color: Palette.primary },
-  studentChipScore: { fontSize: 11, color: Palette.textSecondary },
-  detailsContainer: { gap: 14 },
-  profileCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 18, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
-  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  largeAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Palette.primary, alignItems: 'center', justifyContent: 'center' },
-  largeAvatarText: { fontSize: 24, fontWeight: '800', color: '#FFFFFF' },
-  profileName: { fontSize: 18, fontWeight: '800', color: Palette.textTitle },
-  profileEmail: { fontSize: 12.5, color: Palette.textSecondary, marginTop: 1 },
-  proBadge: { alignSelf: 'flex-start', backgroundColor: Palette.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginTop: 6 },
-  proBadgeText: { fontSize: 10.5, fontWeight: '700', color: Palette.primary },
-  metricsGrid: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 14, borderTopWidth: 1, borderTopColor: Palette.borderSubtle },
-  metricItem: { alignItems: 'center' },
-  metricLabel: { fontSize: 9.5, fontWeight: '800', color: Palette.textSecondary, letterSpacing: 0.6 },
-  metricVal: { fontSize: 16, fontWeight: '800', color: Palette.textTitle, marginTop: 2 },
-  topicBreakdownCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 18, borderWidth: 1, borderColor: Palette.border, ...Shadows.card },
-  breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  breakdownTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle },
-  topicList: { gap: 14 },
-  topicRow: { gap: 6 },
-  topicMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  subjectTag: { fontSize: 10.5, fontWeight: '700', color: Palette.primary },
-  topicTitleText: { fontSize: 13.5, fontWeight: '700', color: Palette.textTitle },
-  percentageText: { fontSize: 14, fontWeight: '800' },
+  studentChipDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  studentChipActive: {
+    borderColor: '#0A192F',
+    backgroundColor: '#F1F5F9',
+  },
+  studentChipActiveDark: {
+    borderColor: '#60A5FA',
+    backgroundColor: '#1E293B',
+  },
+  avatarBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarBoxDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  avatarBoxActive: {
+    backgroundColor: '#0A192F',
+  },
+  avatarLetter: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  studentChipName: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  studentChipScore: {
+    fontSize: 11,
+    color: '#64748b',
+  },
+  detailsContainer: {
+    gap: 14,
+  },
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  profileCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  largeAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0A192F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  largeAvatarText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  profileEmail: {
+    fontSize: 12.5,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  proBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 6,
+  },
+  proBadgeDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  proBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0A192F',
+  },
+  proBadgeTextDark: {
+    color: '#F8FAFC',
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  metricsGridDark: {
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  metricItem: {
+    alignItems: 'center',
+  },
+  metricLabel: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 0.6,
+  },
+  metricVal: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginTop: 2,
+  },
+  topicBreakdownCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#eef2f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  topicBreakdownCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  breakdownHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  breakdownTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  topicList: {
+    gap: 14,
+  },
+  topicRow: {
+    gap: 6,
+  },
+  topicMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  subjectTag: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  topicTitleText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  percentageText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  textWhite: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
+  },
 });

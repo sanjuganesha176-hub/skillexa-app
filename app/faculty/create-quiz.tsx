@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -14,7 +15,7 @@ import {
 import { TargetAudienceSelector } from '../../components/TargetAudienceSelector';
 import { useAuth } from '../../components/auth-context';
 import { AppHeader } from '../../components/common/AppHeader';
-import { Palette, Radii, Shadows } from '../../constants/theme';
+import { useTheme } from '../../components/theme-context';
 import { TargetAudience } from '../../data/collegeData';
 import { QuestionMetadata } from '../../data/curriculumSchema';
 import { CollegeStore } from '../../services/collegeStore';
@@ -31,6 +32,7 @@ interface QuestionDraft {
 
 export default function CreateQuizScreen() {
   const { profile } = useAuth();
+  const { isDark } = useTheme();
   const [section, setSection] = useState<'Engineering' | 'Competitive Exams'>('Engineering');
   const [subject, setSubject] = useState('Embedded Systems');
   const [topic, setTopic] = useState('Microcontrollers');
@@ -68,13 +70,13 @@ export default function CreateQuizScreen() {
       id: 'q-2',
       question: 'What is the function of the SysTick timer in ARM Cortex-M?',
       options: [
-        'Dedicated 24-bit downcounter used to generate periodic RTOS ticks',
-        'High speed watchdog reset',
-        'PWM audio DAC generator',
-        'Flash memory programmer',
+        'Generates periodic RTOS tick interrupts',
+        'PWM frequency carrier clock',
+        'Calculates CRC parity bytes',
+        'Monitors supply brownout voltages',
       ],
       correctAnswer: 0,
-      explanation: 'SysTick is an integrated system timer calibrated for RTOS timebase generation.',
+      explanation: 'SysTick is a 24-bit system timer embedded in ARM cores specifically intended for RTOS scheduling.',
       marks: 2,
     },
   ]);
@@ -91,23 +93,21 @@ export default function CreateQuizScreen() {
     setQuestions([...questions, newQ]);
   };
 
-  const handleUpdateQuestion = (index: number, field: keyof QuestionDraft, val: any) => {
+  const handleUpdateQuestion = (index: number, field: keyof QuestionDraft, value: any) => {
     const updated = [...questions];
-    updated[index] = { ...updated[index], [field]: val };
+    (updated[index] as any)[field] = value;
     setQuestions(updated);
   };
 
   const handleUpdateOption = (qIdx: number, optIdx: number, text: string) => {
     const updated = [...questions];
-    const newOptions = [...updated[qIdx].options];
-    newOptions[optIdx] = text;
-    updated[qIdx].options = newOptions;
+    updated[qIdx].options[optIdx] = text;
     setQuestions(updated);
   };
 
   const handleDeleteQuestion = (index: number) => {
     if (questions.length <= 1) {
-      Alert.alert('Minimum Question Required', 'A quiz must contain at least 1 question.');
+      Alert.alert('Cannot Delete', 'A quiz must have at least one question.');
       return;
     }
     const updated = questions.filter((_, i) => i !== index);
@@ -115,80 +115,67 @@ export default function CreateQuizScreen() {
   };
 
   const handleDuplicateQuestion = (index: number) => {
-    const target = questions[index];
-    const duplicated: QuestionDraft = {
-      ...target,
-      id: `q-${Date.now()}`,
-      question: `${target.question} (Copy)`,
-      options: [...target.options],
-    };
+    const copy = { ...questions[index], id: `q-${Date.now()}` };
     const updated = [...questions];
-    updated.splice(index + 1, 0, duplicated);
+    updated.splice(index + 1, 0, copy);
     setQuestions(updated);
   };
 
   const handlePublishQuiz = () => {
-    if (!quizName.trim() || !topic.trim()) {
-      Alert.alert('Missing Fields', 'Please enter a Quiz Name and Topic.');
+    if (!quizName.trim()) {
+      Alert.alert('Missing Name', 'Please give your quiz a descriptive title.');
       return;
     }
 
-    const invalidQ = questions.find((q) => !q.question.trim() || q.options.some((o) => !o.trim()));
-    if (invalidQ) {
-      Alert.alert('Incomplete Questions', 'Please fill out all question statements and 4 options.');
+    // Validate that questions have content
+    const hasEmpty = questions.some((q) => !q.question.trim() || q.options.some((o) => !o.trim()));
+    if (hasEmpty) {
+      Alert.alert('Incomplete Questions', 'Please fill in question statements and all 4 options for every question.');
       return;
     }
 
-    const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 2), 0);
-
-    const convertedQuestions: QuestionMetadata[] = questions.map((q, idx) => ({
-      id: `fac-q-${Date.now()}-${idx}`,
+    const compiledQuestions: QuestionMetadata[] = questions.map((q, idx) => ({
+      id: `q-${Date.now()}-${idx + 1}`,
       section: section === 'Engineering' ? 'engineering' : 'competitive',
       category: 'subjects',
       subject,
       topic: topic.trim(),
       subtopic: subtopic.trim(),
-      difficulty,
       questionType: 'mcq',
       question: q.question.trim(),
       options: q.options.map((o) => o.trim()),
       correctAnswer: q.correctAnswer,
-      explanation: q.explanation.trim() || 'Verified by Faculty Educator.',
-      marks: q.marks,
-      negativeMarks: parseFloat(negativeMarks) || 0,
-      isFacultyCreated: true,
-      facultyName: profile.name || 'Dr. Kusumadhara S',
+      explanation: q.explanation.trim() || 'Verified by Faculty',
+      difficulty,
     }));
 
     FacultySystemStore.addQuiz({
+      quizName: quizName.trim(),
       section: section === 'Engineering' ? 'engineering' : 'competitive',
       subject,
       topic: topic.trim(),
       subtopic: subtopic.trim(),
-      quizName: quizName.trim(),
-      description: description.trim() || 'Faculty curated multi-question assessment.',
+      description: description.trim() || `Department quiz on ${topic} (${section})`,
       durationMinutes: parseInt(duration, 10) || 15,
       difficulty,
-      totalMarks,
-      negativeMarks: parseFloat(negativeMarks) || 0,
       passingScore: parseInt(passingScore, 10) || 60,
-      questions: convertedQuestions,
-      published: true,
+      negativeMarks: parseFloat(negativeMarks) || 0,
+      totalMarks: compiledQuestions.length,
+      questions: compiledQuestions,
       facultyName: profile.name || 'Dr. Kusumadhara S',
-      facultyDesignation: profile.facultyDesignation || 'Associate Professor',
-      facultyDepartment: profile.department || 'ECE Department',
       collegeId: profile.collegeId || 'clg-kvg',
       collegeName: profile.collegeName || 'KVG College of Engineering',
-      isVerifiedFaculty: true,
+      facultyDepartment: profile.department || 'ECE',
       visibility,
+      published: true,
     });
 
     if (visibility === 'college') {
       CollegeStore.dispatchNotification({
         studentId: 'std-101',
         collegeId: profile.collegeId || 'clg-kvg',
-        title: '🔔 New Quiz Available',
-        message: `${profile.name || 'Faculty'} created "${quizName.trim()}" (${questions.length} questions).`,
+        title: '📝 New Department Quiz Published',
+        message: `${profile.name || 'Faculty'}: "${quizName.trim()}" (${compiledQuestions.length} Qs, ${duration} mins).`,
         type: 'QUIZ',
         actionRoute: '/quizzpage',
         actionParams: {
@@ -198,189 +185,228 @@ export default function CreateQuizScreen() {
         },
       });
 
-      Alert.alert('Quiz Published Successfully!', `Quiz "${quizName}" with ${questions.length} questions has been published to target students in ${profile.collegeName || 'your college'}.`);
+      Alert.alert(
+        'Quiz Published! 🎉',
+        `"${quizName}" with ${compiledQuestions.length} questions is now live. Enrolled students in ${profile.collegeName || 'your college'} received a notification.`
+      );
     } else {
       Alert.alert(
-        'Published to SkillExa Community! 🌍',
-        `Quiz "${quizName}" is now available in the SkillExa Community library for students across all colleges.`
+        'Quiz Published Community-Wide! 🌍',
+        `"${quizName}" is published to the Global SkillExa Quiz Arena. Students from all institutions can now practice this quiz!`
       );
     }
+
     setQuizName('');
     setDescription('');
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppHeader showBack title="Create Assessment Quiz" subtitle="Author Multi-Question Assessments" />
+    <SafeAreaView style={[styles.safeArea, isDark && styles.safeAreaDark]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#070B14" : "#FFFFFF"}
+      />
+      <AppHeader
+        showBack
+        title="Create Department Quiz"
+        subtitle="Multi-Question Creator & Assessment Engine"
+        backLabel="Faculty Hub"
+        onBack={() => router.push('/faculty-dashboard' as any)}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Banner */}
-        <View style={styles.banner}>
-          <Feather name="plus-circle" size={22} color={Palette.success} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bannerTitle}>Multi-Question Quiz Builder</Text>
-            <Text style={styles.bannerDesc}>Add unlimited 4-option MCQs with negative marking and auto-grading.</Text>
-          </View>
-        </View>
-
-        {/* 1. Quiz Settings Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>1. Quiz Configuration & Details</Text>
-
-          <View style={styles.inputGrid}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>SECTION</Text>
-              <TextInput style={styles.input} value={section} onChangeText={(t) => setSection(t as any)} />
+        <View style={styles.container}>
+          {/* Banner */}
+          <View style={[styles.banner, isDark && styles.bannerDark]}>
+            <View style={[styles.bannerIconBox, isDark && styles.bannerIconBoxDark]}>
+              <Feather name="plus-circle" size={20} color={isDark ? "#38BDF8" : "#0066FF"} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>SUBJECT</Text>
-              <TextInput style={styles.input} value={subject} onChangeText={setSubject} />
+              <Text style={[styles.bannerTitle, isDark && styles.textWhite]}>Build Multi-Question Quiz</Text>
+              <Text style={[styles.bannerDesc, isDark && styles.textMutedDark]}>
+                Configure timing, negative scoring, automated evaluation, and publish to targeted batches.
+              </Text>
             </View>
           </View>
 
-          <View style={[styles.inputGrid, { marginTop: 10 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>TOPIC NAME *</Text>
-              <TextInput style={styles.input} value={topic} onChangeText={setTopic} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>SUBTOPIC</Text>
-              <TextInput style={styles.input} value={subtopic} onChangeText={setSubtopic} />
-            </View>
-          </View>
+          {/* Form Card 1: Quiz Details */}
+          <View style={[styles.card, isDark && styles.cardDark]}>
+            <Text style={[styles.cardHeader, isDark && styles.textWhite]}>1. Quiz Configuration & Target</Text>
 
-          <Text style={[styles.label, { marginTop: 12 }]}>QUIZ TITLE *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Unit 3: ARM Cortex-M Mastery Quiz"
-            placeholderTextColor={Palette.textMuted}
-            value={quizName}
-            onChangeText={setQuizName}
-          />
-
-          <Text style={[styles.label, { marginTop: 12 }]}>QUIZ DESCRIPTION</Text>
-          <TextInput
-            style={[styles.input, { height: 50 }]}
-            placeholder="Instructions for students..."
-            placeholderTextColor={Palette.textMuted}
-            multiline
-            value={description}
-            onChangeText={setDescription}
-          />
-
-          {/* Numerical Parameters Row */}
-          <View style={[styles.inputGrid, { marginTop: 10 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>DURATION (MINS)</Text>
-              <TextInput style={styles.input} keyboardType="numeric" value={duration} onChangeText={setDuration} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>NEGATIVE MARKS</Text>
-              <TextInput style={styles.input} keyboardType="numeric" value={negativeMarks} onChangeText={setNegativeMarks} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>PASSING SCORE (%)</Text>
-              <TextInput style={styles.input} keyboardType="numeric" value={passingScore} onChangeText={setPassingScore} />
-            </View>
-          </View>
-
-          {/* Target Audience Delivery & Visibility */}
-          <View style={{ marginTop: 14 }}>
-            <TargetAudienceSelector
-              visibility={visibility}
-              onChangeVisibility={setVisibility}
-              target={target}
-              onChangeTarget={setTarget}
-              collegeName={profile.collegeName || 'KVG College of Engineering'}
+            <Text style={[styles.label, isDark && styles.labelDark]}>QUIZ TITLE *</Text>
+            <TextInput
+              style={[styles.input, isDark && styles.inputDark]}
+              placeholder="e.g. Unit 3 NVIC & Timers Assessment"
+              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              value={quizName}
+              onChangeText={setQuizName}
             />
-          </View>
-        </View>
 
-        {/* 2. Questions List */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Questions Builder ({questions.length})</Text>
-          <Text style={styles.sectionSubtitle}>Add, edit, duplicate, or delete questions</Text>
-        </View>
+            <View style={styles.inputGrid}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, isDark && styles.labelDark]}>SUBJECT</Text>
+                <TextInput
+                  style={[styles.input, isDark && styles.inputDark]}
+                  value={subject}
+                  onChangeText={setSubject}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, isDark && styles.labelDark]}>TOPIC</Text>
+                <TextInput
+                  style={[styles.input, isDark && styles.inputDark]}
+                  value={topic}
+                  onChangeText={setTopic}
+                />
+              </View>
+            </View>
 
-        <View style={styles.questionsContainer}>
-          {questions.map((q, qIdx) => (
-            <View key={q.id} style={styles.qBlockCard}>
-              <View style={styles.qBlockHeader}>
-                <View style={styles.qIndexBadge}>
-                  <Text style={styles.qIndexText}>QUESTION {qIdx + 1}</Text>
-                </View>
-                <View style={styles.qActionsRow}>
-                  <TouchableOpacity onPress={() => handleDuplicateQuestion(qIdx)} style={styles.actionBtn}>
-                    <Feather name="copy" size={15} color={Palette.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteQuestion(qIdx)} style={styles.actionBtn}>
-                    <Feather name="trash-2" size={15} color={Palette.danger} />
-                  </TouchableOpacity>
-                </View>
+            <View style={[styles.inputGrid, { marginTop: 10 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, isDark && styles.labelDark]}>DURATION (MINS)</Text>
+                <TextInput
+                  style={[styles.input, isDark && styles.inputDark]}
+                  keyboardType="numeric"
+                  value={duration}
+                  onChangeText={setDuration}
+                />
               </View>
 
-              {/* Statement */}
-              <Text style={styles.label}>QUESTION STATEMENT</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Type question statement..."
-                placeholderTextColor={Palette.textMuted}
-                multiline
-                value={q.question}
-                onChangeText={(t) => handleUpdateQuestion(qIdx, 'question', t)}
-              />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, isDark && styles.labelDark]}>NEGATIVE MARKING</Text>
+                <TextInput
+                  style={[styles.input, isDark && styles.inputDark]}
+                  keyboardType="numeric"
+                  value={negativeMarks}
+                  onChangeText={setNegativeMarks}
+                />
+              </View>
+            </View>
 
-              {/* 4 Options */}
-              <Text style={[styles.label, { marginTop: 10 }]}>OPTIONS (SELECT RADIO FOR CORRECT ANSWER)</Text>
-              {q.options.map((opt, optIdx) => (
-                <View key={optIdx} style={styles.optRow}>
-                  <TouchableOpacity
-                    style={[styles.radio, q.correctAnswer === optIdx && styles.radioActive]}
-                    onPress={() => handleUpdateQuestion(qIdx, 'correctAnswer', optIdx)}
-                  >
-                    {q.correctAnswer === optIdx && <View style={styles.radioDot} />}
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.optInput}
-                    placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
-                    placeholderTextColor={Palette.textMuted}
-                    value={opt}
-                    onChangeText={(t) => handleUpdateOption(qIdx, optIdx, t)}
-                  />
-                </View>
-              ))}
-
-              {/* Explanation */}
-              <Text style={[styles.label, { marginTop: 10 }]}>EXPLANATION & SOLUTION</Text>
-              <TextInput
-                style={[styles.input, { height: 50 }]}
-                placeholder="Why is this answer correct?"
-                placeholderTextColor={Palette.textMuted}
-                multiline
-                value={q.explanation}
-                onChangeText={(t) => handleUpdateQuestion(qIdx, 'explanation', t)}
+            {/* Target Audience Delivery & Visibility */}
+            <View style={{ marginTop: 14 }}>
+              <TargetAudienceSelector
+                visibility={visibility}
+                onChangeVisibility={setVisibility}
+                target={target}
+                onChangeTarget={setTarget}
+                collegeName={profile.collegeName || 'KVG College of Engineering'}
               />
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* Add Question Button */}
-        <TouchableOpacity style={styles.addQBtn} onPress={handleAddQuestion} activeOpacity={0.8}>
-          <Feather name="plus" size={18} color={Palette.primary} />
-          <Text style={styles.addQBtnText}>Add Another Question</Text>
-        </TouchableOpacity>
+          {/* Form Card 2: Question Blocks */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, isDark && styles.textWhite]}>
+              Quiz Questions ({questions.length})
+            </Text>
+            <Text style={[styles.sectionSubtitle, isDark && styles.textMutedDark]}>
+              Add, reorder, and configure answer keys with explanations
+            </Text>
+          </View>
 
-        {/* Final Actions */}
-        <View style={styles.finalActionsRow}>
-          <TouchableOpacity style={styles.draftBtn} onPress={() => Alert.alert('Draft Saved', 'Quiz draft has been saved.')}>
-            <Text style={styles.draftBtnText}>Save Draft</Text>
+          <View style={styles.questionsContainer}>
+            {questions.map((q, qIdx) => (
+              <View key={q.id} style={[styles.qBlockCard, isDark && styles.qBlockCardDark]}>
+                <View style={styles.qBlockHeader}>
+                  <View style={[styles.qIndexBadge, isDark && styles.qIndexBadgeDark]}>
+                    <Text style={[styles.qIndexText, isDark && styles.qIndexTextDark]}>
+                      QUESTION {qIdx + 1}
+                    </Text>
+                  </View>
+                  <View style={styles.qActionsRow}>
+                    <TouchableOpacity onPress={() => handleDuplicateQuestion(qIdx)} style={styles.actionBtn}>
+                      <Feather name="copy" size={15} color={isDark ? "#38BDF8" : "#0066FF"} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteQuestion(qIdx)} style={styles.actionBtn}>
+                      <Feather name="trash-2" size={15} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Statement */}
+                <Text style={[styles.label, isDark && styles.labelDark]}>QUESTION STATEMENT *</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea, isDark && styles.inputDark]}
+                  placeholder="Type question statement..."
+                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                  multiline
+                  value={q.question}
+                  onChangeText={(t) => handleUpdateQuestion(qIdx, 'question', t)}
+                />
+
+                {/* 4 Options */}
+                <Text style={[styles.label, { marginTop: 12 }, isDark && styles.labelDark]}>
+                  OPTIONS (SELECT RADIO FOR CORRECT ANSWER)
+                </Text>
+                {q.options.map((opt, optIdx) => (
+                  <View key={optIdx} style={styles.optRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.radio,
+                        isDark && styles.radioDark,
+                        q.correctAnswer === optIdx && styles.radioActive,
+                      ]}
+                      onPress={() => handleUpdateQuestion(qIdx, 'correctAnswer', optIdx)}
+                    >
+                      {q.correctAnswer === optIdx && <View style={styles.radioDot} />}
+                    </TouchableOpacity>
+                    <TextInput
+                      style={[styles.optInput, isDark && styles.optInputDark]}
+                      placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
+                      placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                      value={opt}
+                      onChangeText={(t) => handleUpdateOption(qIdx, optIdx, t)}
+                    />
+                  </View>
+                ))}
+
+                {/* Explanation */}
+                <Text style={[styles.label, { marginTop: 12 }, isDark && styles.labelDark]}>
+                  EXPLANATION & SOLUTION
+                </Text>
+                <TextInput
+                  style={[styles.input, { height: 50 }, isDark && styles.inputDark]}
+                  placeholder="Why is this answer correct?"
+                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                  multiline
+                  value={q.explanation}
+                  onChangeText={(t) => handleUpdateQuestion(qIdx, 'explanation', t)}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Add Question Button */}
+          <TouchableOpacity
+            style={[styles.addQBtn, isDark && styles.addQBtnDark]}
+            onPress={handleAddQuestion}
+            activeOpacity={0.8}
+          >
+            <Feather name="plus" size={17} color={isDark ? "#38BDF8" : "#0066FF"} />
+            <Text style={[styles.addQBtnText, isDark && styles.addQBtnTextDark]}>
+              Add Another Question
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.publishQuizBtn} onPress={handlePublishQuiz} activeOpacity={0.85}>
-            <Feather name="check-circle" size={16} color="#FFFFFF" />
-            <Text style={styles.publishQuizBtnText}>Publish Quiz ({questions.length} Qs)</Text>
-          </TouchableOpacity>
+          {/* Final Actions */}
+          <View style={styles.finalActionsRow}>
+            <TouchableOpacity
+              style={[styles.draftBtn, isDark && styles.draftBtnDark]}
+              onPress={() => Alert.alert('Draft Saved', 'Quiz draft has been saved.')}
+            >
+              <Text style={[styles.draftBtnText, isDark && styles.textWhite]}>Save Draft</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.publishQuizBtn, isDark && styles.publishQuizBtnDark]}
+              onPress={handlePublishQuiz}
+              activeOpacity={0.88}
+            >
+              <Feather name="check-circle" size={16} color="#FFFFFF" />
+              <Text style={styles.publishQuizBtnText}>Publish Quiz ({questions.length} Qs) →</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -388,74 +414,236 @@ export default function CreateQuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Palette.background },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeAreaDark: {
+    backgroundColor: '#070B14',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 48,
+  },
+  container: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
+  },
   banner: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: Palette.successBorder,
+    borderColor: '#eef2f6',
     borderLeftWidth: 4,
-    borderLeftColor: Palette.success,
+    borderLeftColor: '#0066FF',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 18,
-    ...Shadows.card,
+    gap: 14,
+    marginBottom: 20,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  bannerTitle: { fontSize: 15, fontWeight: '800', color: Palette.textTitle },
-  bannerDesc: { fontSize: 12, color: Palette.textSecondary, marginTop: 2 },
+  bannerDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+    borderLeftColor: '#38BDF8',
+  },
+  bannerIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerIconBoxDark: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+  },
+  bannerTitle: {
+    fontSize: 15.5,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  bannerDesc: {
+    fontSize: 12.5,
+    color: '#64748b',
+    marginTop: 2,
+    lineHeight: 17,
+  },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
+    borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    borderColor: Palette.border,
-    marginBottom: 20,
-    ...Shadows.card,
+    borderColor: '#eef2f6',
+    marginBottom: 24,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  cardHeader: { fontSize: 16, fontWeight: '800', color: Palette.textTitle, marginBottom: 12 },
-  label: { fontSize: 10.5, fontWeight: '800', color: Palette.textTitle, letterSpacing: 0.6, marginBottom: 6 },
-  inputGrid: { flexDirection: 'row', gap: 10 },
+  cardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  cardHeader: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#334155',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  labelDark: {
+    color: '#94A3B8',
+  },
+  inputGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   input: {
-    backgroundColor: Palette.backgroundSecondary,
-    borderRadius: Radii.input,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Palette.border,
-    padding: 10,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     fontSize: 13,
-    color: Palette.textTitle,
+    color: '#0f172a',
   },
-  textArea: { height: 60, textAlignVertical: 'top' },
-  sectionHeaderRow: { marginBottom: 12 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: Palette.textTitle },
-  sectionSubtitle: { fontSize: 12, color: Palette.textSecondary, marginTop: 2 },
-  questionsContainer: { gap: 14, marginBottom: 16 },
+  inputDark: {
+    backgroundColor: '#070B14',
+    borderColor: '#1E293B',
+    color: '#F8FAFC',
+  },
+  textArea: {
+    height: 64,
+    textAlignVertical: 'top',
+  },
+  sectionHeaderRow: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  sectionSubtitle: {
+    fontSize: 12.5,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  questionsContainer: {
+    gap: 14,
+    marginBottom: 16,
+  },
   qBlockCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: 16,
+    borderRadius: 18,
+    padding: 18,
     borderWidth: 1,
-    borderColor: Palette.border,
-    ...Shadows.card,
+    borderColor: '#eef2f6',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  qBlockHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  qIndexBadge: { backgroundColor: Palette.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  qIndexText: { fontSize: 11, fontWeight: '800', color: Palette.primary },
-  qActionsRow: { flexDirection: 'row', gap: 12 },
-  actionBtn: { padding: 4 },
-  optRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Palette.border, alignItems: 'center', justifyContent: 'center' },
-  radioActive: { borderColor: Palette.primary },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Palette.primary },
-  optInput: { flex: 1, backgroundColor: Palette.backgroundSecondary, borderRadius: Radii.input, borderWidth: 1, borderColor: Palette.border, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: Palette.textTitle },
+  qBlockCardDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#1E293B',
+  },
+  qBlockHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  qIndexBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  qIndexBadgeDark: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+  },
+  qIndexText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0066FF',
+  },
+  qIndexTextDark: {
+    color: '#38BDF8',
+  },
+  qActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionBtn: {
+    padding: 4,
+  },
+  optRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDark: {
+    borderColor: '#475569',
+  },
+  radioActive: {
+    borderColor: '#0066FF',
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#0066FF',
+  },
+  optInput: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+    color: '#0f172a',
+  },
+  optInputDark: {
+    backgroundColor: '#070B14',
+    borderColor: '#1E293B',
+    color: '#F8FAFC',
+  },
   addQBtn: {
-    backgroundColor: Palette.primaryLight,
-    borderRadius: Radii.button,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
     paddingVertical: 13,
     borderWidth: 1,
-    borderColor: Palette.primaryBorder,
+    borderColor: '#CBD5E1',
     borderStyle: 'dashed',
     flexDirection: 'row',
     alignItems: 'center',
@@ -463,10 +651,70 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 20,
   },
-  addQBtnText: { fontSize: 14, fontWeight: '700', color: Palette.primary },
-  finalActionsRow: { flexDirection: 'row', gap: 10 },
-  draftBtn: { flex: 1, backgroundColor: Palette.backgroundSecondary, borderWidth: 1, borderColor: Palette.border, borderRadius: Radii.button, paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
-  draftBtnText: { fontSize: 13.5, fontWeight: '700', color: Palette.textSecondary },
-  publishQuizBtn: { flex: 1.5, backgroundColor: Palette.primary, borderRadius: Radii.button, paddingVertical: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, ...Shadows.button },
-  publishQuizBtnText: { color: '#FFFFFF', fontSize: 14.5, fontWeight: '700' },
+  addQBtnDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  addQBtnText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0066FF',
+  },
+  addQBtnTextDark: {
+    color: '#38BDF8',
+  },
+  finalActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  draftBtn: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  draftBtnDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  draftBtnText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  publishQuizBtn: {
+    flex: 1.5,
+    backgroundColor: '#0A192F',
+    borderRadius: 12,
+    paddingVertical: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#0A192F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  publishQuizBtnDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+    borderWidth: 1,
+  },
+  publishQuizBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  textWhite: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
+  },
 });
